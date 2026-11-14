@@ -1,4 +1,4 @@
-import { calculateMetrics, checkAssimetriaLote, formatCurrency, parseProfitCSV } from './calculations.js';
+import { calculateMetrics, checkAssimetriaLote, formatCurrency, parseProfitCSV, calculateRiskTiers } from './calculations.js';
 import fs from 'fs';
 
 console.log("=== TESTE 1: DADOS REAIS AUDITADOS (DIAS 1 E 2) ===");
@@ -100,5 +100,12 @@ const parseRes = parseProfitCSV(sampleCSV);
 console.log("Pregões parsed:", parseRes.pregoes.length, "(Esperado: 2)");
 console.log("Dia 12/11 Liq:", parseRes.pregoes[0].resultadoLiquido, "(Esperado: -39.88)");
 console.log("Dia 13/11 Liq:", parseRes.pregoes[1].resultadoLiquido, "(Esperado: 79.06)");
+
+console.log("\n=== TESTE 8: GESTÃO ESTRATÉGICA DE RISCO (5% SOBRE R$ 2.835) ===");
+const risk = calculateRiskTiers(2835, 5, 0.20);
+console.log("Risco Financeiro:", risk.riscoFinanceiro, "(Esperado: 141.75)");
+console.log("Pontos Globais:", risk.pontosGlobais, "(Esperado: 709)");
+console.log("Stop 2 cts:", risk.tiers[0].pontos, "pts - Seguro?", risk.tiers[0].isSeguro, "(Esperado: >= 354 e true)");
+console.log("Stop 4 cts:", risk.tiers[2].pontos, "pts - Seguro?", risk.tiers[2].isSeguro, "(Esperado: 177 e false - fragil)");
 
 console.log("\n>>> TODOS OS TESTES PASSARAM COM SUCESSO! <<<");

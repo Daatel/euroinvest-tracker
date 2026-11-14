@@ -374,3 +374,58 @@ export function parseProfitCSV(csvText) {
 
   return { pregoes, diasSemOperacao, totalTrades: trades.length };
 }
+
+/**
+ * Calcula a régua de stop técnico por contrato com base no % de risco do capital de perda
+ * @param {number} capitalPerda Valor total de drawdown (ex: 2835)
+ * @param {number} riscoPercentual Percentual de risco por trade (ex: 5)
+ * @param {number} valorPonto Valor por ponto por contrato (ex: 0.20)
+ */
+export function calculateRiskTiers(capitalPerda = 2835, riscoPercentual = 5, valorPonto = CONFIG.VALOR_POR_PONTO_WIN) {
+  const cap = Math.abs(Number(capitalPerda)) || 2835;
+  const pct = Number(riscoPercentual) || 5;
+  const vp = Number(valorPonto) || 0.20;
+
+  const riscoFinanceiro = Math.round(((cap * pct) / 100) * 100) / 100;
+  const pontosGlobais = Math.round(riscoFinanceiro / vp);
+
+  const contratosList = [
+    { contratos: 2, label: 'Mão Base' },
+    { contratos: 3, label: 'Moderado' },
+    { contratos: 4, label: 'Médio' },
+    { contratos: 6, label: 'Mão Cheia' }
+  ];
+
+  const tiers = contratosList.map(c => {
+    const pontos = Math.floor(pontosGlobais / c.contratos);
+    let status = 'Estrutura Segura';
+    let statusTipo = 'seguro';
+    if (pontos < 150) {
+      status = 'Inviável (Violino)';
+      statusTipo = 'inviavel';
+    } else if (pontos < 200) {
+      status = 'Frágil (< 200 pts)';
+      statusTipo = 'fragil';
+    } else if (pontos < 250) {
+      status = 'Viável (≥ 200 pts)';
+      statusTipo = 'viavel';
+    }
+
+    return {
+      contratos: c.contratos,
+      label: c.label,
+      pontos,
+      status,
+      statusTipo,
+      isSeguro: pontos >= 200
+    };
+  });
+
+  return {
+    capitalPerda: cap,
+    riscoPercentual: pct,
+    riscoFinanceiro,
+    pontosGlobais,
+    tiers
+  };
+}

@@ -3,7 +3,7 @@
  * Versão MVP PropFirmTradeCoach com Calendário Oficial 3 Estrelas
  */
 
-import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV } from './calculations.js';
+import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV, calculateRiskTiers } from './calculations.js';
 
 const STORAGE_KEY = 'euroinvest_avaliacao_data_v1';
 
@@ -66,7 +66,9 @@ let appData = {
     minPregões: CONFIG.MIN_PREGOES,
     minTaxaDiasPositivos: CONFIG.MIN_TAXA_POSITIVOS,
     tetoConsistenciaDiaria: CONFIG.TETO_CONSISTENCIA_DIA,
-    valorPorPontoContrato: CONFIG.VALOR_POR_PONTO_WIN
+    valorPorPontoContrato: CONFIG.VALOR_POR_PONTO_WIN,
+    riscoMaximoPercentual: 5,
+    maoBaseContratos: 2
   },
   pregoes: [],
   diasSemOperacao: []
@@ -185,6 +187,12 @@ function loadData() {
         if (!appData.meta) {
           appData.meta = { ...CONFIG };
         }
+        if (!appData.meta.riscoMaximoPercentual) {
+          appData.meta.riscoMaximoPercentual = 5;
+        }
+        if (!appData.meta.maoBaseContratos) {
+          appData.meta.maoBaseContratos = 2;
+        }
         if (!Array.isArray(appData.diasSemOperacao)) {
           appData.diasSemOperacao = [];
         }
@@ -210,11 +218,92 @@ function renderApp() {
   const metrics = calculateMetrics(appData.pregoes, appData.meta || {}, appData.diasSemOperacao || []);
 
   renderHeaderStatus(metrics);
+  renderGestaoRisco();
   renderKPICards(metrics);
   renderDiagnosticBanner(metrics);
   renderChart(metrics);
   renderHistoryTable(metrics);
 }
+
+/**
+ * Renderiza o bloco de Gestão Estratégica de Risco (Risco Máximo por Trade & Régua de Pontos)
+ */
+function renderGestaoRisco() {
+  const container = document.getElementById('reguaContratosGrid');
+  if (!container) return;
+
+  const pct = appData.meta?.riscoMaximoPercentual || 5;
+  const maoBase = appData.meta?.maoBaseContratos || 2;
+  const pisoDrawdown = appData.meta?.pisoDrawdown || CONFIG.PISO_DRAWDOWN;
+  const valorPonto = appData.meta?.valorPorPontoContrato || CONFIG.VALOR_POR_PONTO_WIN;
+
+  const riskData = calculateRiskTiers(pisoDrawdown, pct, valorPonto);
+
+  const elFin = document.getElementById('riscoFinanceiroTexto');
+  if (elFin) elFin.textContent = formatCurrency(riskData.riscoFinanceiro);
+
+  const elBadge = document.getElementById('riscoPercentualBadge');
+  if (elBadge) elBadge.textContent = `${riskData.riscoPercentual.toFixed(1)}% do Piso`;
+
+  const elPontos = document.getElementById('riscoPontosGlobais');
+  if (elPontos) elPontos.textContent = `${riskData.pontosGlobais} pontos`;
+
+  const selPct = document.getElementById('selectRiscoPercentual');
+  if (selPct) selPct.value = String(pct);
+
+  const selMao = document.getElementById('selectMaoBase');
+  if (selMao) selMao.value = String(maoBase);
+
+  container.innerHTML = riskData.tiers.map(t => {
+    const isMaoBase = t.contratos === Number(maoBase);
+    let borderClass = 'border-slate-800 bg-slate-900/60';
+    let badgeColor = 'text-emerald-400 bg-emerald-950/60 border-emerald-800';
+
+    if (t.statusTipo === 'inviavel') {
+      badgeColor = 'text-red-400 bg-red-950/60 border-red-800';
+    } else if (t.statusTipo === 'fragil') {
+      badgeColor = 'text-amber-400 bg-amber-950/60 border-amber-800';
+    } else if (t.statusTipo === 'viavel') {
+      badgeColor = 'text-sky-400 bg-sky-950/60 border-sky-800';
+    }
+
+    if (isMaoBase) {
+      borderClass = 'border-sky-600/80 bg-sky-950/30 ring-1 ring-sky-500/40';
+    }
+
+    return `
+      <div class="p-2.5 rounded-lg border ${borderClass} flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-bold text-slate-200 text-xs">${t.contratos} cts</span>
+            ${isMaoBase ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-sky-900 text-sky-300 border border-sky-700">Base</span>' : `<span class="text-[10px] text-slate-500 font-mono">${t.label}</span>`}
+          </div>
+          <div class="mt-1 font-mono font-bold text-base ${t.pontos >= 200 ? 'text-white' : 'text-amber-400'}">
+            ${t.pontos} <span class="text-xs font-normal text-slate-400">pts</span>
+          </div>
+        </div>
+        <div class="mt-2">
+          <span class="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border ${badgeColor}">
+            ${t.status}
+          </span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.atualizarParametrosRisco = function() {
+  const selPct = document.getElementById('selectRiscoPercentual');
+  const selMao = document.getElementById('selectMaoBase');
+  if (!selPct || !selMao) return;
+
+  if (!appData.meta) appData.meta = { ...CONFIG };
+  appData.meta.riscoMaximoPercentual = parseFloat(selPct.value) || 5;
+  appData.meta.maoBaseContratos = parseInt(selMao.value, 10) || 2;
+
+  saveData();
+  renderGestaoRisco();
+};
 
 /**
  * Renderiza o cabeçalho e status geral

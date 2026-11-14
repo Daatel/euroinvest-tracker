@@ -2,6 +2,20 @@
 
 ---
 
+## v1.7 — 2026-11-14 (Sessão: Painel Superior de Gestão Estratégica de Risco e Régua de Volatilidade)
+
+### 🚀 Gestão de Risco por Trade & Régua de Volatilidade (`web/calculations.js`, `web/index.html`, `web/app.js`)
+- **Painel Superior de Gestão Estratégica de Risco:** Inserido na posição de destaque entre o Cabeçalho e o Radar de Eventos, exibindo o teto financeiro por trade e a régua técnica contra violinos de volatilidade.
+- **Cálculo Dinâmico de Risco (`calculateRiskTiers`):** Parametrização ajustável em tela do percentual de risco por operação (padrão: 5,0% = R$ 141,75 sobre o piso de R$ 2.835,00) e da mão base (2 contratos).
+- **Régua de Stop Técnico no WIN com Alerta de Violino (< 200 pts):**
+  - **2 contratos (Base):** 354 pts (`🟢 Estrutura Segura`).
+  - **3 contratos:** 236 pts (`🟢 Viável`).
+  - **4 contratos (Médio):** 177 pts (`⚠️ Frágil: Stop < 200 pts`).
+  - **6 contratos (Mão Cheia):** 118 pts (`🔴 Inviável: Risco de Violino`).
+- **Diretriz Técnica Institucional:** Sinalização explícita de que stops inferiores a 200 pontos no WIN sofrem risco crônico de violino por ruído de HFT, recomendando mão máxima de até 3 contratos sob o teto de 5%.
+
+---
+
 ## v1.6 — 2026-11-14 (Sessão: Importador de CSV do Profit, Gestão de Dias Sem Operação e Lembrete)
 
 ### 🚀 Importador de Relatório & Métricas Neutras (`web/calculations.js`, `web/index.html`, `web/app.js`)

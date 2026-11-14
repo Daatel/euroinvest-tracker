@@ -145,6 +145,88 @@
       </div>
     </div>
 
+    <!-- Gestão Estratégica de Risco (Painel Superior de Risco por Trade) -->
+    <section class="rounded-xl bg-slate-900/80 border border-slate-800 p-4 transition-all shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="p-1.5 rounded-lg bg-sky-950 text-sky-400 border border-sky-800 shrink-0">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              Gestão Estratégica de Risco
+              <span class="text-[10px] font-normal normal-case px-2 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700 font-mono">Mini Índice (WIN)</span>
+            </h2>
+            <p class="text-[11px] text-slate-400 mt-0.5">
+              Teto financeiro por operação e régua técnica contra violinos de volatilidade
+            </p>
+          </div>
+        </div>
+
+        <!-- Controles Interativos -->
+        <div class="flex flex-wrap items-center gap-2.5 text-xs">
+          <div class="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+            <span class="text-slate-400 font-mono text-[11px]">Risco / Trade:</span>
+            <select id="selectRiscoPercentual" onchange="window.atualizarParametrosRisco()" class="bg-slate-900 text-amber-400 font-mono font-bold text-xs rounded border border-slate-700 px-1.5 py-0.5 focus:outline-none focus:border-amber-500">
+              <option value="2">2.0% (R$ 56,70)</option>
+              <option value="3">3.0% (R$ 85,05)</option>
+              <option value="4">4.0% (R$ 113,40)</option>
+              <option value="5" selected>5.0% (R$ 141,75)</option>
+              <option value="6">6.0% (R$ 170,10)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+            <span class="text-slate-400 font-mono text-[11px]">Mão Base:</span>
+            <select id="selectMaoBase" onchange="window.atualizarParametrosRisco()" class="bg-slate-900 text-sky-400 font-mono font-bold text-xs rounded border border-slate-700 px-1.5 py-0.5 focus:outline-none focus:border-sky-500">
+              <option value="1">1 Contrato</option>
+              <option value="2" selected>2 Contratos</option>
+              <option value="3">3 Contratos</option>
+              <option value="4">4 Contratos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid com Resumo e Régua de Contratos -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 mt-3 text-xs">
+        <!-- Coluna 1: Resumo Financeiro (4 colunas) -->
+        <div class="lg:col-span-4 p-3.5 rounded-xl bg-slate-800/30 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400 font-mono uppercase">Risco Máximo Permitido / Trade</div>
+            <div class="flex items-baseline gap-2 mt-1">
+              <span id="riscoFinanceiroTexto" class="text-xl font-bold font-mono text-amber-400">R$ 141,75</span>
+              <span id="riscoPercentualBadge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">5,0% do Piso</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2 font-mono">
+              Capacidade global: <strong id="riscoPontosGlobais" class="text-slate-200 font-bold">708 pontos</strong> de WIN (R$ 0,20/pt).
+            </div>
+          </div>
+          <div class="mt-3 pt-2.5 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+            <span>Piso Total da Avaliação:</span>
+            <strong class="text-red-400 font-mono font-bold">-R$ 2.835,00</strong>
+          </div>
+        </div>
+
+        <!-- Coluna 2: Régua de Stop Técnico por Contrato (8 colunas) -->
+        <div class="lg:col-span-8 p-3.5 rounded-xl bg-slate-800/30 border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-800/60 text-[11px] font-mono text-slate-400">
+            <span>RÉGUA DE STOP POR TAMANHO DE MÃO</span>
+            <span class="text-amber-400 font-semibold">Piso Técnico de Segurança: ≥ 200 pts</span>
+          </div>
+
+          <div id="reguaContratosGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+            <!-- Inserido dinamicamente via renderGestaoRisco() -->
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-amber-950/20 border border-amber-900/40 text-[11px] text-amber-300/90 flex items-start gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <span><strong>Regra de Volatilidade:</strong> Menos de 200 pontos de stop no WIN é tecnicamente frágil devido ao ruído normal de oscilação (risco de violino por HFT). Para manter o stop estruturalmente seguro dentro do teto financeiro de 5%, a mão máxima recomendada é de <strong>até 3 contratos</strong>.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Radar Oficial de Eventos 3 Estrelas (Investing.com) com Navegação por Dia -->
     <section class="rounded-xl bg-slate-900/60 border border-slate-800 p-4 transition-all">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-800/80">
