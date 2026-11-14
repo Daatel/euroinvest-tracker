@@ -2,6 +2,20 @@
 
 ---
 
+## v1.5 — 2026-11-14 (Sessão: Calendário Econômico Oficial Investing.com e Navegação por Pregão)
+
+### 🚀 Radar de Eventos & Usabilidade (`web/index.html`, `web/app.js`)
+- **Calendário Econômico Oficial Investing.com:** Mapeamento completo dos eventos de 3 estrelas (EUA & BR) para a semana de 16/11 a 20/11:
+  - **16/11 (Segunda):** IBC-Br (09:00, Ant 0,30%) e Discurso de Warsh/Fed (14:00).
+  - **17/11 (Terça):** Núcleo de Vendas no Varejo (10:30, Proj 0,4%, Ant 0,9%) e Vendas no Varejo (10:30, Proj 0,0%, Ant 0,8%).
+  - **18/11 (Quarta):** Estoques de Petróleo Bruto (12:30, Ant 4,657M) e Atas do FOMC (16:00).
+  - **19/11 (Quinta):** Pedidos por Seguro-Desemprego (10:30, Ant 200K), Atividade Industrial Fed Filadélfia (10:30, Ant 20,9) e Balanço Patrimonial do Fed (18:30, Ant 6.759B).
+  - **20/11 (Sexta):** Feriado Nacional — Dia da Consciência Negra (B3 Fechada, pregão suspenso).
+- **Navegação Diária no Radar:** Implementação de abas de seleção rápida (`16/11`, `17/11`, `18/11`, `19/11`, `20/11`) com autodeterminação do pregão atual/seguinte.
+- **Limpeza Visual e Eliminação de Redundâncias:** Remoção dos badges repetitivos de "3★ Alto" em cada card, mantendo os dados objetivos de horário, país, moeda, indicador, projeção e número anterior.
+
+---
+
 ## v1.4 — 2026-11-14 (Sessão: MVP PropFirmTradeCoach — Radar 3★, Parecer de Mesa e Dossiê IA)
 
 ### 🚀 MVP PropFirmTradeCoach (`web/index.html`, `web/app.js`, `dados_avaliacao.json`)

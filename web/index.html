@@ -120,66 +120,25 @@
       </div>
     </header>
 
-    <!-- Radar Informativo de Notícias Relevantes (3 Estrelas EUA & BR) -->
+    <!-- Radar Oficial de Eventos 3 Estrelas (Investing.com) com Navegação por Dia -->
     <section class="rounded-xl bg-slate-900/60 border border-slate-800 p-4 transition-all">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-2 border-b border-slate-800/80">
         <div class="flex items-center gap-2">
           <i data-lucide="calendar" class="w-4 h-4 text-amber-400"></i>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Radar de Eventos Econômicos de 3 Estrelas (EUA & Brasil)</h2>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-200">
+            Radar de Eventos 3 Estrelas (EUA & Brasil) — <span id="radarDiaTitulo" class="text-amber-400 font-mono">Segunda-feira, 16 de Novembro</span>
+          </h2>
         </div>
-        <span class="text-[11px] text-slate-500 font-mono">Fatos Relevantes • Volatilidade Potencial</span>
+        
+        <!-- Abas dos Dias da Semana -->
+        <div id="radarTabs" class="flex flex-wrap items-center gap-1.5">
+          <!-- Inserido dinamicamente via JS -->
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        
-        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
-          <span class="text-lg">🇺🇸</span>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="font-mono font-bold text-amber-400">09:30</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded bg-red-950 text-red-400 font-mono">3★ Alto</span>
-            </div>
-            <div class="font-semibold text-slate-200 truncate mt-0.5">CPI / PPI / Payroll</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Inflação e Emprego EUA</div>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
-          <span class="text-lg">🇧🇷</span>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="font-mono font-bold text-amber-400">10:00</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 font-mono">3★ Alto</span>
-            </div>
-            <div class="font-semibold text-slate-200 truncate mt-0.5">Abertura Ibovespa à Vista</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Leilão de Ações (Vale / Petro)</div>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
-          <span class="text-lg">🇺🇸</span>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="font-mono font-bold text-amber-400">10:30</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 font-mono">3★ Alto</span>
-            </div>
-            <div class="font-semibold text-slate-200 truncate mt-0.5">Abertura NYSE / Nasdaq</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Entrada de Fluxo Estrangeiro</div>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
-          <span class="text-lg">🏛️</span>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between">
-              <span class="font-mono font-bold text-amber-400">15:00 / 18:30</span>
-              <span class="text-[10px] px-1.5 py-0.2 rounded bg-red-950 text-red-400 font-mono">3★ Máximo</span>
-            </div>
-            <div class="font-semibold text-slate-200 truncate mt-0.5">FOMC (Fed) / Copom (Selic)</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">Decisões de Taxa de Juros</div>
-          </div>
-        </div>
-
+      <!-- Container Dinâmico dos Eventos Reais -->
+      <div id="radarContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+        <!-- Inserido dinamicamente via JS -->
       </div>
     </section>
 

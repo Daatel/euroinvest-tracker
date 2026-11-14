@@ -1,11 +1,58 @@
 /**
  * app.js — Controlador Principal da Interface do Terminal de Avaliação Euroinvest
- * Versão MVP PropFirmTradeCoach
+ * Versão MVP PropFirmTradeCoach com Calendário Oficial 3 Estrelas
  */
 
 import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent } from './calculations.js';
 
 const STORAGE_KEY = 'euroinvest_avaliacao_data_v1';
+
+// Calendário Oficial de Eventos 3 Estrelas (Investing.com — Semana 16 a 20 de Novembro)
+const CALENDARIO_OFICIAL = {
+  "2026-11-16": {
+    dataStr: "16/11",
+    diaSemana: "Segunda-feira, 16 de Novembro",
+    eventos: [
+      { hora: "09:00", pais: "BR", flag: "🇧🇷", moeda: "BRL", nome: "IBC-Br (Setembro)", projecao: "-", anterior: "0,30%" },
+      { hora: "14:00", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Discurso de Warsh, Governador do Fed", projecao: "-", anterior: "-" }
+    ]
+  },
+  "2026-11-17": {
+    dataStr: "17/11",
+    diaSemana: "Terça-feira, 17 de Novembro",
+    eventos: [
+      { hora: "10:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Núcleo de Vendas no Varejo (Mensal) (Out)", projecao: "0,4%", anterior: "0,9%" },
+      { hora: "10:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Vendas no Varejo (Mensal) (Out)", projecao: "0,0%", anterior: "0,8%" }
+    ]
+  },
+  "2026-11-18": {
+    dataStr: "18/11",
+    diaSemana: "Quarta-feira, 18 de Novembro",
+    eventos: [
+      { hora: "12:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Estoques de Petróleo Bruto", projecao: "-", anterior: "4,657M" },
+      { hora: "16:00", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Atas da Reunião do FOMC", projecao: "-", anterior: "-" }
+    ]
+  },
+  "2026-11-19": {
+    dataStr: "19/11",
+    diaSemana: "Quinta-feira, 19 de Novembro",
+    eventos: [
+      { hora: "10:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Pedidos Iniciais por Seguro-Desemprego", projecao: "-", anterior: "200K" },
+      { hora: "10:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Índice de Atividade Industrial Fed Filadélfia (Nov)", projecao: "-", anterior: "20,9" },
+      { hora: "18:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Balanço Patrimonial do Federal Reserve", projecao: "-", anterior: "6.759B" }
+    ]
+  },
+  "2026-11-20": {
+    dataStr: "20/11",
+    diaSemana: "Sexta-feira, 20 de Novembro",
+    isFeriado: true,
+    eventos: [
+      { hora: "Todo o dia", pais: "BR", flag: "🇧🇷", moeda: "BRL", nome: "Feriado Nacional — Dia da Consciência Negra (B3 Fechada)", projecao: "-", anterior: "-" }
+    ]
+  }
+};
+
+let diaSelecionadoRadar = "2026-11-16"; // Padrão: Próxima sessão
 
 // Estado global da aplicação
 let appData = {
@@ -25,18 +72,104 @@ let appData = {
 };
 
 let chartInstance = null;
-let currentChartMode = 'operacional'; // 'operacional' (-500 a 1600) ou 'completa' (-2835 a 1600)
+let currentChartMode = 'operacional';
 let editingPregaoId = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
   loadData();
   setupEventListeners();
+  determinarProximoDiaRadar();
+  renderRadarEventos();
   renderApp();
 });
 
 /**
- * Carrega os dados do LocalStorage (privacidade: sem seed fixo no código público)
+ * Determina automaticamente qual dia exibir no radar com base na data e hora atual
+ */
+function determinarProximoDiaRadar() {
+  const hoje = new Date().toISOString().split('T')[0];
+  const horaAtual = new Date().getHours();
+
+  if (CALENDARIO_OFICIAL[hoje] && horaAtual < 18) {
+    diaSelecionadoRadar = hoje;
+  } else {
+    // Busca o próximo dia útil presente no calendário
+    const chaves = Object.keys(CALENDARIO_OFICIAL).sort();
+    const proximo = chaves.find(k => k >= hoje);
+    diaSelecionadoRadar = proximo || "2026-11-16";
+  }
+}
+
+/**
+ * Renderiza o radar de eventos limpo, sem badges redundantes, com seletor de dias
+ */
+function renderRadarEventos() {
+  const container = document.getElementById('radarContainer');
+  const tabsContainer = document.getElementById('radarTabs');
+  if (!container || !tabsContainer) return;
+
+  // Renderiza as abas de seleção dos dias da semana
+  tabsContainer.innerHTML = Object.entries(CALENDARIO_OFICIAL).map(([dataKey, d]) => {
+    const isSelected = dataKey === diaSelecionadoRadar;
+    const activeClass = isSelected
+      ? 'bg-amber-500/20 text-amber-300 border-amber-600 font-bold'
+      : 'bg-slate-800/60 text-slate-400 hover:text-slate-200 border-slate-700 font-medium';
+
+    return `
+      <button onclick="window.selecionarDiaRadar('${dataKey}')" class="px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${activeClass}">
+        ${d.dataStr} ${d.isFeriado ? '🇧🇷' : ''}
+      </button>
+    `;
+  }).join('');
+
+  const dadosDia = CALENDARIO_OFICIAL[diaSelecionadoRadar] || CALENDARIO_OFICIAL["2026-11-16"];
+  document.getElementById('radarDiaTitulo').textContent = dadosDia.diaSemana;
+
+  if (dadosDia.isFeriado) {
+    container.innerHTML = `
+      <div class="col-span-full p-4 rounded-xl bg-slate-800/30 border border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🇧🇷</span>
+          <div>
+            <div class="font-bold text-white text-sm">Feriado Nacional — Dia da Consciência Negra</div>
+            <div class="text-xs text-slate-400 mt-0.5">Mercado brasileiro (B3) fechado. Pregão suspenso na Euroinvest.</div>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded text-xs font-mono bg-blue-950 text-blue-300 border border-blue-800">Sem Operações</span>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = dadosDia.eventos.map(ev => {
+    return `
+      <div class="p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 flex items-start gap-3">
+        <span class="text-xl mt-0.5">${ev.flag}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-mono font-bold text-amber-400 text-sm">${ev.hora}</span>
+            <span class="text-xs font-mono text-slate-400">${ev.moeda}</span>
+          </div>
+          <div class="font-semibold text-slate-200 text-xs leading-snug">${ev.nome}</div>
+          <div class="flex items-center gap-3 mt-1.5 text-[11px] font-mono text-slate-400">
+            <span>Proj: <strong class="text-slate-300">${ev.projecao}</strong></span>
+            <span>•</span>
+            <span>Ant: <strong class="text-slate-300">${ev.anterior}</strong></span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.selecionarDiaRadar = function(dataKey) {
+  diaSelecionadoRadar = dataKey;
+  renderRadarEventos();
+};
+
+/**
+ * Carrega os dados do LocalStorage
  */
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -55,7 +188,6 @@ function loadData() {
     }
   }
 
-  // Inicializa com lista vazia para garantir privacidade; o trader clica em Restaurar com seu JSON local
   appData.pregoes = [];
 }
 
@@ -196,7 +328,7 @@ function renderKPICards(m) {
 }
 
 /**
- * Renderiza o gráfico combinado (Barras diárias + Linha acumulada + Linha de Teto)
+ * Renderiza o gráfico combinado
  */
 function renderChart(m) {
   const ctx = document.getElementById('performanceChartCanvas');
@@ -352,14 +484,14 @@ function renderChart(m) {
 }
 
 /**
- * Renderiza a Tabela de Histórico com botão do Coach em destaque
+ * Renderiza a Tabela de Histórico
  */
 function renderHistoryTable(m) {
   const tbody = document.getElementById('historyTableBody');
   if (!tbody) return;
 
   if (m.historico.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para importar seus dados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para carregar o seu arquivo de backup.</td></tr>`;
     return;
   }
 
@@ -420,7 +552,6 @@ function formatDateBR(isoStr) {
  * Configuração dos ouvintes de eventos da página
  */
 function setupEventListeners() {
-  // Toggle de escala do gráfico
   const toggleBtn = document.getElementById('btnToggleScale');
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
@@ -430,7 +561,6 @@ function setupEventListeners() {
     });
   }
 
-  // Formulário de novo pregão: recálculo em tempo real de Líquido e Assimetria
   const inputPontos = document.getElementById('inputPontos');
   const inputContratos = document.getElementById('inputContratos');
   const inputBruto = document.getElementById('inputBruto');
@@ -462,7 +592,6 @@ function setupEventListeners() {
     if (inp) inp.addEventListener('input', updateFormCalculations);
   });
 
-  // Submissão do formulário
   const form = document.getElementById('tradeForm');
   if (form) {
     form.addEventListener('submit', (e) => {
@@ -471,15 +600,12 @@ function setupEventListeners() {
     });
   }
 
-  // Botões de Exportar / Importar / Dossiê
   document.getElementById('btnExportJson')?.addEventListener('click', exportJsonData);
   document.getElementById('btnExportDossier')?.addEventListener('click', window.openDossierModal);
   document.getElementById('btnImportJson')?.addEventListener('click', () => {
     document.getElementById('fileInputImport')?.click();
   });
   document.getElementById('fileInputImport')?.addEventListener('change', importJsonData);
-
-  // Botão Conectar Drive (File System Access API)
   document.getElementById('btnConnectDrive')?.addEventListener('click', connectLocalDriveFile);
 }
 
@@ -502,7 +628,6 @@ function handleFormSubmit() {
     return;
   }
 
-  // Prevenção de duplicidade de data (se não estiver editando o mesmo)
   const existingIndex = appData.pregoes.findIndex(p => p.data === data && p.id !== editingPregaoId);
   if (existingIndex !== -1) {
     if (!confirm(`Já existe um pregão registrado na data ${formatDateBR(data)}. Deseja sobrescrever os dados desse dia?`)) {
@@ -516,7 +641,6 @@ function handleFormSubmit() {
   const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto, valorPonto);
   const tetoConsistencia = appData.meta?.tetoConsistenciaDiaria || CONFIG.TETO_CONSISTENCIA_DIA;
 
-  // Gerador dinâmico de parecer técnico caso não exista
   const parecerGerado = gerarParecerOperacional({
     data,
     contratos,
@@ -555,7 +679,6 @@ function handleFormSubmit() {
   if (editingPregaoId) {
     const idx = appData.pregoes.findIndex(p => p.id === editingPregaoId);
     if (idx !== -1) {
-      // Preserva o parecerCoach existente se já houver um customizado
       if (appData.pregoes[idx].parecerCoach && !appData.pregoes[idx].parecerCoach.autoGerado) {
         pregaoObj.parecerCoach = appData.pregoes[idx].parecerCoach;
       }
@@ -568,13 +691,11 @@ function handleFormSubmit() {
     appData.pregoes.push(pregaoObj);
   }
 
-  // Ordena por data cronológica
   appData.pregoes.sort((a, b) => new Date(a.data) - new Date(b.data));
 
   saveData();
   renderApp();
 
-  // Limpa formulário
   document.getElementById('tradeForm').reset();
   document.getElementById('inputData').value = new Date().toISOString().split('T')[0];
   document.getElementById('inputContratos').value = '2';
@@ -664,7 +785,6 @@ window.openCoachModal = function(id) {
   document.getElementById('modalCoachTitle').textContent = `Parecer de Mesa — Pregão #${dia.pregaoNumero || ''} (${formatDateBR(dia.data)})`;
   document.getElementById('modalCoachSubtitle').textContent = `Horário: ${dia.horarioInicio || '--:--'} às ${dia.horarioFim || '--:--'} • Mão: ${dia.contratos} cts • Líquido: ${formatCurrency(dia.resultadoLiquido, true)}`;
 
-  // Veredito
   document.getElementById('modalCoachVeredito').textContent = coach.veredito || 'EM ANÁLISE';
   const vereditoBox = document.getElementById('modalCoachVereditoBox');
   if (dia.resultadoLiquido >= 0) {
@@ -673,7 +793,6 @@ window.openCoachModal = function(id) {
     vereditoBox.className = 'p-3 rounded-xl border border-amber-800 bg-amber-950/40 text-amber-300 flex items-center justify-between';
   }
 
-  // Print tag
   const printTag = document.getElementById('modalCoachPrintTag');
   if (dia.printFile) {
     printTag.innerHTML = `<span class="inline-flex items-center gap-1 text-[11px] text-sky-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700"><i data-lucide="image" class="w-3 h-3"></i> ${dia.printFile}</span>`;
@@ -681,18 +800,14 @@ window.openCoachModal = function(id) {
     printTag.innerHTML = `<span class="text-[11px] text-slate-500">Sem print anexado</span>`;
   }
 
-  // Síntese
   document.getElementById('modalCoachSintese').textContent = coach.sintese || dia.analiseEstrategica || 'Sem notas registradas para a sessão.';
 
-  // Acertos
   const ulAcertos = document.getElementById('modalCoachAcertos');
   ulAcertos.innerHTML = (coach.acertos || ["Execução conforme o plano."]).map(item => `<li>${item}</li>`).join('');
 
-  // Erros
   const ulErros = document.getElementById('modalCoachErros');
   ulErros.innerHTML = (coach.erros || ["Sem desvios registrados."]).map(item => `<li>${item}</li>`).join('');
 
-  // Diretriz
   document.getElementById('modalCoachDiretriz').textContent = coach.diretriz || "Manter foco nos parâmetros da avaliação da Euroinvest.";
 
   modal.classList.remove('hidden');
@@ -807,9 +922,6 @@ window.deletePregao = function(id) {
   }
 };
 
-/**
- * Exporta o backup JSON completo para download
- */
 function exportJsonData() {
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
   const downloadAnchor = document.createElement('a');
@@ -821,9 +933,6 @@ function exportJsonData() {
   downloadAnchor.remove();
 }
 
-/**
- * Importa backup JSON com validação de formato e atualização de meta
- */
 function importJsonData(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -852,9 +961,6 @@ function importJsonData(e) {
   reader.readAsText(file);
 }
 
-/**
- * Conexão com Google Drive local (File System Access API opcional)
- */
 async function connectLocalDriveFile() {
   if (!('showOpenFilePicker' in window)) {
     alert("A File System Access API está disponível em navegadores Chromium no desktop (Chrome/Edge). Em outros dispositivos, utilize os botões Backup JSON / Restaurar.");
