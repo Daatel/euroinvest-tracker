@@ -26,9 +26,24 @@
       "saldoApuradoDia": -62.09,
       "horarioInicio": "13:46",
       "horarioFim": "17:02",
-      "setup": "Price Action / Estruturas",
+      "setup": "Price Action / Consolidação",
       "assimetriaLote": true,
-      "analiseEstrategica": "Operou fora da janela ideal (tarde). Trade 2 tomou loss com 4 contratos (-150 pts = -R$ 120), enquanto o gain de +310 pts foi com apenas 2 contratos (+R$ 124). Houve reentrada imediata às 16:49 após stop. Lição: manter tamanho de mão simétrico (2 contratos fixos) e parar na janela da manhã."
+      "printFile": "pregao_2026-11-12.png",
+      "analiseEstrategica": "Operação aberta fora do horário estipulado (pós-meio-dia). Entrada com 2 contratos na consolidação, adicionados mais 2 contratos esperando retomada que não ocorreu, gerando loss. O Trade 3 foi excelente (+310 pts), recuperando o dia e empatando a conta. O erro residiu em não desligar a tela naquele momento e insistir em operar à tarde num mercado com baixo volume e volatilidade, sofrendo 2 losses adicionais no fim do dia. Ponto positivo: encerrou a sessão com perda controlada (-R$ 62,09), prevenindo o aumento do drawdown e eliminando qualquer risco de dia de fúria.",
+      "parecerCoach": {
+        "veredito": "DESVIO DE JANELA & ASSIMETRIA DE LOTE",
+        "sintese": "A leitura técnica encerrou o dia com saldo positivo em pontos (+15,0 pts), contudo a eficiência financeira foi anulada pela assimetria de lote no Trade 2 e pela insistência em operar no período vespertino.",
+        "acertos": [
+          "Leitura técnica e execução do Trade 3 (+310 pts com 2 contratos) foram de alta precisão, recuperando integralmente o prejuízo anterior.",
+          "Maturidade e disciplina de corte final: encerrou a sessão com perda contida em R$ 62,09, preservando o capital e evitando escalada de risco."
+        ],
+        "erros": [
+          "Infração da janela operacional: primeira entrada executada às 13h46, contrariando a regra de operar exclusivamente pela manhã.",
+          "Preço médio em consolidação: adição de 2 contratos contra o movimento gerou loss dobrado no Trade 2 (-150 pts = -R$ 120,00).",
+          "Não realização do empate: após reverter o prejuízo às 15h01, permaneceu exposto ao mercado em horário de baixa liquidez, devolvendo R$ 60,94 em dois stops."
+        ],
+        "diretriz": "Travar a mão base estritamente em 2 contratos. Operações limitadas impreterivelmente às 12h00. Quando a conta recuperar o saldo para o zero no meio do dia, encerrar a plataforma imediatamente."
+      }
     },
     {
       "id": "pregao-2026-11-13",
@@ -46,7 +61,21 @@
       "horarioFim": "10:12",
       "setup": "VWAP e Volume Profile (POC/VAH/VAL)",
       "assimetriaLote": false,
-      "analiseEstrategica": "Execução perfeita na janela matinal (1h07 de tela). 100% na mão base de 2 contratos. Payoff de 3.49x. Único stop às 10:00 (abertura à vista) foi curto (-45 pts) e encerrado prontamente. Entrada seguinte limpa (+250 pts) e encerramento imediato do dia."
+      "printFile": "pregao_2026-11-13.png",
+      "analiseEstrategica": "Execução perfeita na janela matinal (1h07 de tela). 100% na mão base de 2 contratos. Payoff de 3.49x. Único stop às 10:00 (abertura à vista) foi curto (-45 pts) e encerrado prontamente. Entrada seguinte limpa (+250 pts) e encerramento imediato do dia.",
+      "parecerCoach": {
+        "veredito": "EXECUÇÃO DE PADRÃO INSTITUCIONAL",
+        "sintese": "Sessão exemplar em conformidade com os requisitos da mesa. Simetria total de contratos, janela focada de 1h07 e excelente relação risco-retorno.",
+        "acertos": [
+          "Disciplina rígida de lote: 100% das ordens executadas com a mão base de 2 contratos.",
+          "Gestão impecável de risco: ganho médio de +173,5 pts contra perda média de -45,0 pts (Payoff 3,49x).",
+          "Aceitação imediata do stop às 10h00 e encerramento da plataforma logo após bater a meta com a operação de +250 pts."
+        ],
+        "erros": [
+          "Ponto de atenção preventiva: o trade das 10h00 coincidiu com a abertura do mercado à vista (leilão das ações), momento de spread alargado. Recomenda-se aguardar de 2 a 3 minutos para estabilização do book."
+        ],
+        "diretriz": "Repetir essa rotina sem alterações. Não alongar horário nem aumentar lote nos pregões seguintes."
+      }
     }
   ]
 }

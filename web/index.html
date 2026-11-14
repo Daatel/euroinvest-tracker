@@ -49,7 +49,6 @@
       color: #E2E8F0;
       font-family: 'Inter', sans-serif;
     }
-    /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -80,6 +79,7 @@
           <div class="flex items-center gap-2">
             <h1 class="text-lg md:text-xl font-bold tracking-tight text-white">EUROINVEST</h1>
             <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-sky-400 font-mono font-medium border border-slate-700">Plano Junior (WIN)</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-mono border border-emerald-800">PropCoach MVP</span>
           </div>
           <p class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
             <span>Trader: <strong class="text-slate-300">Marcio Leite</strong></span>
@@ -92,12 +92,15 @@
       </div>
 
       <!-- Ações e Status -->
-      <div class="flex flex-wrap items-center gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
         <div id="statusBadge" class="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border bg-slate-800 text-slate-300 border-slate-700">
           Carregando...
         </div>
 
-        <div id="driveIndicator"></div>
+        <button id="btnExportDossier" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700 transition-colors shadow-sm" title="Gerar relatório consolidado para análise de IA">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Dossiê IA</span>
+        </button>
 
         <button id="btnConnectDrive" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors shadow-sm" title="Conectar arquivo JSON no Google Drive">
           <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i>
@@ -106,7 +109,7 @@
 
         <button id="btnExportJson" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors shadow-sm" title="Baixar arquivo de backup">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Backup JSON</span>
+          <span>Backup</span>
         </button>
 
         <button id="btnImportJson" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors shadow-sm" title="Restaurar backup">
@@ -117,36 +120,66 @@
       </div>
     </header>
 
-    <!-- Checklist Pré-Pregão (Painel de Blindagem Psicológica e Operacional) -->
+    <!-- Radar Informativo de Notícias Relevantes (3 Estrelas EUA & BR) -->
     <section class="rounded-xl bg-slate-900/60 border border-slate-800 p-4 transition-all">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
-          <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Checklist Diário de Blindagem Pré-Pregão</h2>
+          <i data-lucide="calendar" class="w-4 h-4 text-amber-400"></i>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Radar de Eventos Econômicos de 3 Estrelas (EUA & Brasil)</h2>
         </div>
-        <span class="text-[11px] text-slate-500 font-mono">Disjuntor & Disciplina</span>
+        <span class="text-[11px] text-slate-500 font-mono">Fatos Relevantes • Volatilidade Potencial</span>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700 cursor-pointer transition-colors">
-          <input type="checkbox" class="premarket-check mt-0.5 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
-          <span class="text-slate-300"><strong>Mão Base Fixa:</strong> 2 contratos padrão. Sem preço médio desordenado.</span>
-        </label>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        
+        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
+          <span class="text-lg">🇺🇸</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-bold text-amber-400">09:30</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-red-950 text-red-400 font-mono">3★ Alto</span>
+            </div>
+            <div class="font-semibold text-slate-200 truncate mt-0.5">CPI / PPI / Payroll</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Inflação e Emprego EUA</div>
+          </div>
+        </div>
 
-        <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700 cursor-pointer transition-colors">
-          <input type="checkbox" class="premarket-check mt-0.5 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
-          <span class="text-slate-300"><strong>Janela Rígida:</strong> 09h05 às 12h00. Aguardar 3 min após abertura à vista (10h00).</span>
-        </label>
+        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
+          <span class="text-lg">🇧🇷</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-bold text-amber-400">10:00</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 font-mono">3★ Alto</span>
+            </div>
+            <div class="font-semibold text-slate-200 truncate mt-0.5">Abertura Ibovespa à Vista</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Leilão de Ações (Vale / Petro)</div>
+          </div>
+        </div>
 
-        <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700 cursor-pointer transition-colors">
-          <input type="checkbox" class="premarket-check mt-0.5 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
-          <span class="text-slate-300"><strong>Notícias Checadas:</strong> Calendário econômico EUA/BR checado (09h30, 10h00, 11h00).</span>
-        </label>
+        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
+          <span class="text-lg">🇺🇸</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-bold text-amber-400">10:30</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 font-mono">3★ Alto</span>
+            </div>
+            <div class="font-semibold text-slate-200 truncate mt-0.5">Abertura NYSE / Nasdaq</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Entrada de Fluxo Estrangeiro</div>
+          </div>
+        </div>
 
-        <label class="flex items-start gap-2.5 p-2.5 rounded-lg bg-slate-800/40 border border-slate-800 hover:border-slate-700 cursor-pointer transition-colors">
-          <input type="checkbox" class="premarket-check mt-0.5 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
-          <span class="text-slate-300"><strong>Disjuntor Financeiro:</strong> Parada obrigatória se atingir -R$ 200 a -R$ 240 no dia.</span>
-        </label>
+        <div class="p-3 rounded-lg bg-slate-800/40 border border-slate-800 flex items-start gap-2.5">
+          <span class="text-lg">🏛️</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-bold text-amber-400">15:00 / 18:30</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded bg-red-950 text-red-400 font-mono">3★ Máximo</span>
+            </div>
+            <div class="font-semibold text-slate-200 truncate mt-0.5">FOMC (Fed) / Copom (Selic)</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Decisões de Taxa de Juros</div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -336,28 +369,33 @@
             <div id="assimetriaWarning" class="hidden p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-[11px] text-amber-300 flex items-start gap-2">
               <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5"></i>
               <div>
-                <strong>Atenção (Assimetria de Lote):</strong> O cálculo de <em>Pontos × R$ 0,20 × Contratos</em> diverge do Bruto informado. Isso indica que alguns trades foram executados com mão maior ou menor.
+                <strong>Aviso de Assimetria de Lote:</strong> O cálculo de <em>Pontos × R$ 0,20 × Contratos</em> diverge do Bruto informado. Indica entradas fracionadas ou médio contra o preço.
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-[11px] font-medium text-slate-400 mb-1">Horário Início</label>
-                <input type="time" id="inputHorarioInicio" value="09:05" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Horário Operado</label>
+                <div class="flex items-center gap-1.5">
+                  <input type="time" id="inputHorarioInicio" value="09:05" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
+                  <span class="text-slate-500">às</span>
+                  <input type="time" id="inputHorarioFim" value="11:30" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
+                </div>
               </div>
               <div>
-                <label class="block text-[11px] font-medium text-slate-400 mb-1">Horário Fim</label>
-                <input type="time" id="inputHorarioFim" value="11:30" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
-              </div>
-              <div>
-                <label class="block text-[11px] font-medium text-slate-400 mb-1">Setup</label>
-                <input type="text" id="inputSetup" value="VWAP + Volume Profile" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white">
+                <label class="block text-[11px] font-medium text-slate-400 mb-1">Setup Utilizado</label>
+                <input type="text" id="inputSetup" value="VWAP + Volume Profile" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white">
               </div>
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Análise Estratégica do Dia & Lições</label>
-              <textarea id="inputAnalise" rows="3" placeholder="Ex: Janela respeitada. Boa leitura da POC. Stop curto na abertura à vista. Encerramento com meta diária batida..." class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 leading-relaxed"></textarea>
+              <label class="block text-[11px] font-medium text-slate-400 mb-1">Arquivo do Print do Dia (Salvo na pasta prints/)</label>
+              <input type="text" id="inputPrintFile" placeholder="ex: pregao_2026-11-14.png" class="w-full px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Notas da Sessão & Leitura Estratégica</label>
+              <textarea id="inputAnalise" rows="3" placeholder="Contexto do dia, leitura de consolidações, absorção de stops e lições..." class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 leading-relaxed"></textarea>
             </div>
 
             <div class="flex items-center gap-2 pt-2">
@@ -381,14 +419,14 @@
               <i data-lucide="history" class="w-4 h-4 text-sky-400"></i>
               Histórico dos Pregões da Avaliação
             </h2>
-            <span class="text-xs text-slate-400">Auditoria Dia a Dia</span>
+            <span class="text-xs text-slate-400">Clique em # para Parecer do Coach</span>
           </div>
 
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="border-b border-slate-800 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                  <th class="py-2.5 px-4">#</th>
+                  <th class="py-2.5 px-4">Coach</th>
                   <th class="py-2.5 px-4">Data</th>
                   <th class="py-2.5 px-4">W / L</th>
                   <th class="py-2.5 px-4">Mão</th>
@@ -418,44 +456,102 @@
 
   </div>
 
-  <!-- Modal para Visualização da Análise Estratégica Completa -->
-  <div id="modalStrategy" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-    <div class="w-full max-w-lg rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4">
+  <!-- Modal 1: Parecer Operacional do Coach (Sóbrio, Impessoal e Institucional) -->
+  <div id="modalCoach" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 id="modalStrategyTitle" class="text-sm font-bold text-white flex items-center gap-2">
-          <i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i>
-          Análise Estratégica do Pregão
-        </h3>
-        <button onclick="window.closeStrategyModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-700 flex items-center justify-center text-emerald-400">
+            <i data-lucide="shield" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="modalCoachTitle" class="text-sm font-bold text-white">Parecer Operacional de Mesa</h3>
+            <span id="modalCoachSubtitle" class="text-xs text-slate-400">Auditoria Institucional de Desempenho</span>
+          </div>
+        </div>
+        <button onclick="window.closeCoachModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="grid grid-cols-3 gap-2 text-xs">
-        <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-800">
-          <span class="text-slate-400 block text-[10px] uppercase">Janela Operada</span>
-          <span id="modalStrategyTime" class="font-mono text-slate-200">--:-- às --:--</span>
+      <!-- Badge de Veredito -->
+      <div id="modalCoachVereditoBox" class="p-3 rounded-xl border flex items-center justify-between">
+        <div>
+          <span class="text-[10px] uppercase font-mono tracking-wider block text-slate-400">Classificação da Sessão:</span>
+          <span id="modalCoachVeredito" class="text-xs font-bold font-mono uppercase">EM ANÁLISE</span>
         </div>
-        <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-800">
-          <span class="text-slate-400 block text-[10px] uppercase">Setup</span>
-          <span id="modalStrategySetup" class="text-slate-200 truncate block">Price Action</span>
+        <div id="modalCoachPrintTag" class="text-xs font-mono text-slate-400"></div>
+      </div>
+
+      <!-- Síntese Executiva -->
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Síntese da Sessão</label>
+        <p id="modalCoachSintese" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 leading-relaxed"></p>
+      </div>
+
+      <!-- Acertos e Erros Lado a Lado -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-900/60">
+          <span class="font-bold text-emerald-400 flex items-center gap-1.5 mb-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Acertos Técnicos
+          </span>
+          <ul id="modalCoachAcertos" class="space-y-1.5 text-slate-300 list-disc list-inside leading-relaxed text-[11px]"></ul>
         </div>
-        <div class="p-2.5 rounded-lg bg-slate-800/60 border border-slate-800">
-          <span class="text-slate-400 block text-[10px] uppercase">Assimetria de Lote</span>
-          <span id="modalStrategyAssimetria" class="text-slate-200">Não</span>
+
+        <div class="p-3.5 rounded-xl bg-amber-950/20 border border-amber-900/60">
+          <span class="font-bold text-amber-400 flex items-center gap-1.5 mb-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> Pontos de Desvio & Ineficiência
+          </span>
+          <ul id="modalCoachErros" class="space-y-1.5 text-slate-300 list-disc list-inside leading-relaxed text-[11px]"></ul>
         </div>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Lições & Reflexão do Dia</label>
-        <div id="modalStrategyText" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed max-h-60 overflow-y-auto whitespace-pre-wrap font-sans">
-        </div>
+      <!-- Diretriz para Próximo Pregão -->
+      <div class="p-3.5 rounded-xl bg-blue-950/30 border border-blue-900/60 text-xs">
+        <span class="font-bold text-sky-400 flex items-center gap-1.5 mb-1">
+          <i data-lucide="compass" class="w-4 h-4"></i> Diretriz Estruturada para o Próximo Pregão
+        </span>
+        <p id="modalCoachDiretriz" class="text-slate-300 leading-relaxed text-[11px]"></p>
       </div>
 
       <div class="flex justify-end pt-2 border-t border-slate-800">
-        <button onclick="window.closeStrategyModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
-          Fechar
+        <button onclick="window.closeCoachModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+          Fechar Parecer
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Exportar Dossiê para Auditoria da IA -->
+  <div id="modalDossier" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-5 h-5 text-emerald-400"></i>
+          <h3 class="text-sm font-bold text-white">Dossiê Consolidado para Auditoria da IA</h3>
+        </div>
+        <button onclick="window.closeDossierModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Copie o bloco estruturado abaixo e cole diretamente no <strong>Claude</strong> ou <strong>Gemini</strong> para receber uma análise profunda e longitudinal da sua evolução técnica e disciplina.
+      </p>
+
+      <textarea id="dossierTextarea" readonly rows="12" class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none select-all"></textarea>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+        <span id="copySuccessMsg" class="text-xs text-emerald-400 font-medium hidden">Copiado para a área de transferência!</span>
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="window.copyDossierText()" class="px-4 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Prompt para IA
+          </button>
+          <button onclick="window.closeDossierModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+            Fechar
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -464,7 +560,6 @@
   <script type="module" src="./app.js"></script>
 
   <script>
-    // Inicialização da data de hoje no formulário
     document.addEventListener('DOMContentLoaded', () => {
       const inputData = document.getElementById('inputData');
       if (inputData && !inputData.value) {

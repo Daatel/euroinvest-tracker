@@ -1,4 +1,5 @@
 *.gsheet
 node_modules/
+prints/
 .DS_Store
 Thumbs.db

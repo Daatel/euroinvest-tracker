@@ -1,11 +1,11 @@
 /**
  * app.js — Controlador Principal da Interface do Terminal de Avaliação Euroinvest
+ * Versão MVP PropFirmTradeCoach
  */
 
 import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent } from './calculations.js';
 
 const STORAGE_KEY = 'euroinvest_avaliacao_data_v1';
-const CHECKLIST_KEY = 'euroinvest_premarket_checklist_v1';
 
 // Estado global da aplicação
 let appData = {
@@ -32,12 +32,11 @@ let editingPregaoId = null;
 document.addEventListener('DOMContentLoaded', async () => {
   loadData();
   setupEventListeners();
-  loadChecklist();
   renderApp();
 });
 
 /**
- * Carrega os dados do LocalStorage (privacidade: sem seed fixo de trades no código público)
+ * Carrega os dados do LocalStorage (privacidade: sem seed fixo no código público)
  */
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -56,7 +55,7 @@ function loadData() {
     }
   }
 
-  // Inicializa limpo: o trader importa seu dados_avaliacao.json pelo botão Restaurar
+  // Inicializa com lista vazia para garantir privacidade; o trader clica em Restaurar com seu JSON local
   appData.pregoes = [];
 }
 
@@ -68,7 +67,6 @@ function saveData() {
  * Renderização central de todos os blocos do dashboard
  */
 function renderApp() {
-  // Passa as configurações do objeto meta para o motor de cálculos
   const metrics = calculateMetrics(appData.pregoes, appData.meta || {});
 
   renderHeaderStatus(metrics);
@@ -354,14 +352,14 @@ function renderChart(m) {
 }
 
 /**
- * Renderiza a Tabela de Histórico
+ * Renderiza a Tabela de Histórico com botão do Coach em destaque
  */
 function renderHistoryTable(m) {
   const tbody = document.getElementById('historyTableBody');
   if (!tbody) return;
 
   if (m.historico.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para importar o arquivo de backup.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para importar seus dados.</td></tr>`;
     return;
   }
 
@@ -372,7 +370,12 @@ function renderHistoryTable(m) {
 
     return `
       <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition-colors">
-        <td class="py-3 px-4 text-xs font-mono font-semibold text-slate-300">#${dia.pregaoNumero}</td>
+        <td class="py-3 px-4">
+          <button onclick="window.openCoachModal('${dia.id}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 border border-slate-700 transition-colors shadow-sm" title="Abrir Parecer Operacional do Coach">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>#${dia.pregaoNumero}</span>
+          </button>
+        </td>
         <td class="py-3 px-4 text-xs font-mono text-slate-300">${formatDateBR(dia.data)}</td>
         <td class="py-3 px-4 text-xs font-mono text-slate-400">${dia.tradesVencedores}W / ${dia.tradesPerdedores}L</td>
         <td class="py-3 px-4 text-xs font-mono text-slate-300">${dia.contratos} cts</td>
@@ -389,13 +392,13 @@ function renderHistoryTable(m) {
         <td class="py-3 px-4 text-xs font-mono ${dia.taxaDiasPositivosAcumulada >= 60 ? 'text-emerald-400' : 'text-amber-400'}">${dia.taxaDiasPositivosAcumulada}%</td>
         <td class="py-3 px-4 text-center">
           <div class="flex items-center justify-center gap-1.5">
-            <button onclick="window.viewDailyStrategy('${dia.id}')" class="p-1 rounded hover:bg-slate-700 text-slate-300 hover:text-white" title="Ver Análise Estratégica">
+            <button onclick="window.openCoachModal('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-sky-400 hover:text-sky-300" title="Parecer do Coach">
               <i data-lucide="file-text" class="w-4 h-4"></i>
             </button>
-            <button onclick="window.editPregao('${dia.id}')" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-sky-300" title="Editar">
+            <button onclick="window.editPregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-sky-300" title="Editar">
               <i data-lucide="edit-2" class="w-4 h-4"></i>
             </button>
-            <button onclick="window.deletePregao('${dia.id}')" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-red-400" title="Excluir">
+            <button onclick="window.deletePregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-red-400" title="Excluir">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
           </div>
@@ -468,8 +471,9 @@ function setupEventListeners() {
     });
   }
 
-  // Botões de Exportar / Importar
+  // Botões de Exportar / Importar / Dossiê
   document.getElementById('btnExportJson')?.addEventListener('click', exportJsonData);
+  document.getElementById('btnExportDossier')?.addEventListener('click', window.openDossierModal);
   document.getElementById('btnImportJson')?.addEventListener('click', () => {
     document.getElementById('fileInputImport')?.click();
   });
@@ -477,11 +481,6 @@ function setupEventListeners() {
 
   // Botão Conectar Drive (File System Access API)
   document.getElementById('btnConnectDrive')?.addEventListener('click', connectLocalDriveFile);
-
-  // Checklist interativo
-  document.querySelectorAll('.premarket-check').forEach(chk => {
-    chk.addEventListener('change', saveChecklist);
-  });
 }
 
 function handleFormSubmit() {
@@ -495,6 +494,7 @@ function handleFormSubmit() {
   const horarioInicio = document.getElementById('inputHorarioInicio').value;
   const horarioFim = document.getElementById('inputHorarioFim').value;
   const setup = document.getElementById('inputSetup').value;
+  const printFile = document.getElementById('inputPrintFile').value.trim();
   const analise = document.getElementById('inputAnalise').value;
 
   if (!data) {
@@ -516,6 +516,21 @@ function handleFormSubmit() {
   const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto, valorPonto);
   const tetoConsistencia = appData.meta?.tetoConsistenciaDiaria || CONFIG.TETO_CONSISTENCIA_DIA;
 
+  // Gerador dinâmico de parecer técnico caso não exista
+  const parecerGerado = gerarParecerOperacional({
+    data,
+    contratos,
+    wins,
+    losses,
+    pontos,
+    bruto,
+    liquido,
+    horarioInicio,
+    horarioFim,
+    hasAssimetria,
+    analise
+  });
+
   const pregaoObj = {
     id: editingPregaoId || `pregao-${data}`,
     data,
@@ -531,13 +546,21 @@ function handleFormSubmit() {
     horarioInicio,
     horarioFim,
     setup,
+    printFile,
     assimetriaLote: hasAssimetria,
-    analiseEstrategica: analise
+    analiseEstrategica: analise,
+    parecerCoach: parecerGerado
   };
 
   if (editingPregaoId) {
     const idx = appData.pregoes.findIndex(p => p.id === editingPregaoId);
-    if (idx !== -1) appData.pregoes[idx] = pregaoObj;
+    if (idx !== -1) {
+      // Preserva o parecerCoach existente se já houver um customizado
+      if (appData.pregoes[idx].parecerCoach && !appData.pregoes[idx].parecerCoach.autoGerado) {
+        pregaoObj.parecerCoach = appData.pregoes[idx].parecerCoach;
+      }
+      appData.pregoes[idx] = pregaoObj;
+    }
     editingPregaoId = null;
     document.getElementById('btnSubmitForm').textContent = 'Salvar Pregão';
     document.getElementById('btnCancelEdit').classList.add('hidden');
@@ -560,23 +583,181 @@ function handleFormSubmit() {
   alert("Pregão salvo com sucesso!");
 }
 
-// Funções expostas globalmente no objeto window para os botões da tabela
-window.viewDailyStrategy = function(id) {
+/**
+ * Motor gerador de parecer operacional sóbrio e impessoal para novos pregões
+ */
+function gerarParecerOperacional(d) {
+  const isGain = d.liquido > 0;
+  const isLoss = d.liquido < 0;
+  const totalTrades = d.wins + d.losses;
+  const winRate = totalTrades > 0 ? (d.wins / totalTrades) * 100 : 0;
+
+  let veredito = isGain ? "CONFORMIDADE OPERACIONAL" : "AJUSTE DE EXECUÇÃO";
+  let sintese = `Sessão encerrada com ${totalTrades} trades (${d.wins}W / ${d.losses}L) e saldo líquido de ${formatCurrency(d.liquido, true)}.`;
+
+  const acertos = [];
+  const erros = [];
+
+  if (isGain) {
+    acertos.push(`Aproveitamento positivo no fechamento do saldo (${formatCurrency(d.liquido, true)}).`);
+  }
+  if (d.contratos === 2) {
+    acertos.push("Manutenção da mão base regulamentar de 2 contratos.");
+  }
+  if (winRate >= 60) {
+    acertos.push(`Taxa de acerto operacional elevada (${winRate.toFixed(1)}%).`);
+  }
+
+  if (d.hasAssimetria) {
+    erros.push("Assimetria identificada entre pontos e financeiro: divergência na ponderação do lote.");
+    veredito = "ALERTA: ASSIMETRIA DE LOTE";
+  }
+  if (totalTrades > 6) {
+    erros.push(`Excesso de operações (${totalTrades} trades no pregão), aumentando custos de emolumentos e exposição a risco.`);
+  }
+  if (d.horarioFim && d.horarioFim > "12:00") {
+    erros.push(`Operações estendidas até ${d.horarioFim}, além do limite recomendado da janela matinal.`);
+  }
+  if (isLoss && acertos.length === 0) {
+    acertos.push("Execução dos stops conforme parâmetros de risco definidos para a sessão.");
+  }
+  if (erros.length === 0) {
+    erros.push("Nenhum desvio crítico identificado na gestão do risco da sessão.");
+  }
+
+  let diretriz = isGain
+    ? "Preservar a rotina de execução sem alongar horários nem aumentar mão na sessão seguinte."
+    : "Revisar a disciplina de encerramento na janela matinal e manter rigor na simetria de lote.";
+
+  return {
+    autoGerado: true,
+    veredito,
+    sintese,
+    acertos,
+    erros,
+    diretriz
+  };
+}
+
+/**
+ * Modal do Parecer Operacional do Coach (Sóbrio e Impessoal)
+ */
+window.openCoachModal = function(id) {
   const dia = appData.pregoes.find(p => p.id === id);
   if (!dia) return;
 
-  const modal = document.getElementById('modalStrategy');
-  document.getElementById('modalStrategyTitle').textContent = `Análise Estratégica — Pregão de ${formatDateBR(dia.data)}`;
-  document.getElementById('modalStrategyTime').textContent = `${dia.horarioInicio || '--:--'} às ${dia.horarioFim || '--:--'}`;
-  document.getElementById('modalStrategySetup').textContent = dia.setup || 'Não informado';
-  document.getElementById('modalStrategyAssimetria').textContent = dia.assimetriaLote ? 'Sim (mãos desiguais entre trades)' : 'Não (mão simétrica)';
-  document.getElementById('modalStrategyText').textContent = dia.analiseEstrategica || 'Nenhum comentário estratégico registrado.';
+  const coach = dia.parecerCoach || gerarParecerOperacional({
+    data: dia.data,
+    contratos: dia.contratos,
+    wins: dia.tradesVencedores,
+    losses: dia.tradesPerdedores,
+    pontos: dia.pontos,
+    bruto: dia.resultadoBruto,
+    liquido: dia.resultadoLiquido,
+    horarioInicio: dia.horarioInicio,
+    horarioFim: dia.horarioFim,
+    hasAssimetria: dia.assimetriaLote,
+    analise: dia.analiseEstrategica
+  });
+
+  const modal = document.getElementById('modalCoach');
+  document.getElementById('modalCoachTitle').textContent = `Parecer de Mesa — Pregão #${dia.pregaoNumero || ''} (${formatDateBR(dia.data)})`;
+  document.getElementById('modalCoachSubtitle').textContent = `Horário: ${dia.horarioInicio || '--:--'} às ${dia.horarioFim || '--:--'} • Mão: ${dia.contratos} cts • Líquido: ${formatCurrency(dia.resultadoLiquido, true)}`;
+
+  // Veredito
+  document.getElementById('modalCoachVeredito').textContent = coach.veredito || 'EM ANÁLISE';
+  const vereditoBox = document.getElementById('modalCoachVereditoBox');
+  if (dia.resultadoLiquido >= 0) {
+    vereditoBox.className = 'p-3 rounded-xl border border-emerald-800 bg-emerald-950/40 text-emerald-300 flex items-center justify-between';
+  } else {
+    vereditoBox.className = 'p-3 rounded-xl border border-amber-800 bg-amber-950/40 text-amber-300 flex items-center justify-between';
+  }
+
+  // Print tag
+  const printTag = document.getElementById('modalCoachPrintTag');
+  if (dia.printFile) {
+    printTag.innerHTML = `<span class="inline-flex items-center gap-1 text-[11px] text-sky-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700"><i data-lucide="image" class="w-3 h-3"></i> ${dia.printFile}</span>`;
+  } else {
+    printTag.innerHTML = `<span class="text-[11px] text-slate-500">Sem print anexado</span>`;
+  }
+
+  // Síntese
+  document.getElementById('modalCoachSintese').textContent = coach.sintese || dia.analiseEstrategica || 'Sem notas registradas para a sessão.';
+
+  // Acertos
+  const ulAcertos = document.getElementById('modalCoachAcertos');
+  ulAcertos.innerHTML = (coach.acertos || ["Execução conforme o plano."]).map(item => `<li>${item}</li>`).join('');
+
+  // Erros
+  const ulErros = document.getElementById('modalCoachErros');
+  ulErros.innerHTML = (coach.erros || ["Sem desvios registrados."]).map(item => `<li>${item}</li>`).join('');
+
+  // Diretriz
+  document.getElementById('modalCoachDiretriz').textContent = coach.diretriz || "Manter foco nos parâmetros da avaliação da Euroinvest.";
 
   modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons({ root: modal });
 };
 
-window.closeStrategyModal = function() {
-  document.getElementById('modalStrategy').classList.add('hidden');
+window.closeCoachModal = function() {
+  document.getElementById('modalCoach').classList.add('hidden');
+};
+
+/**
+ * Modal Dossiê Consolidado para IA
+ */
+window.openDossierModal = function() {
+  const metrics = calculateMetrics(appData.pregoes, appData.meta || {});
+  const modal = document.getElementById('modalDossier');
+  const textarea = document.getElementById('dossierTextarea');
+
+  let md = `# DOSSIÊ DE AUDITORIA ESTATÍSTICA E COMPORTAMENTAL — TRADER MARCIO LEITE\n`;
+  md += `Mesa Proprietária: Euroinvest (Plano Junior WIN)\n`;
+  md += `Meta: ${formatCurrency(metrics.config.META_FINANCEIRA)} | Piso: ${formatCurrency(metrics.config.PISO_DRAWDOWN)}\n`;
+  md += `Data da Extração: ${new Date().toLocaleDateString('pt-BR')}\n\n`;
+
+  md += `## RESUMO CONSOLIDADO ATUAL\n`;
+  md += `- Pregões Operados: ${metrics.totalPregoes} de ${metrics.config.MAX_PREGOES}\n`;
+  md += `- Saldo Real Acumulado: ${formatCurrency(metrics.saldoReal, true)}\n`;
+  md += `- Saldo Apurado (Teto R$ 700/dia): ${formatCurrency(metrics.saldoApurado, true)}\n`;
+  md += `- Taxa de Dias Positivos: ${metrics.taxaDiasPositivos}% (${metrics.diasPositivos}G / ${metrics.diasNegativos}L)\n`;
+  md += `- Meta Diária Recalibrada para 10 dias: ${formatCurrency(metrics.metaDiariaRecalibrada)} / dia\n`;
+  md += `- Margem Livre até o Piso: ${formatCurrency(metrics.margemLivrePiso)}\n`;
+  md += `- Total de Trades: ${metrics.totalTrades} (${metrics.totalTradesGanhos}W / ${metrics.totalTradesPerdidos}L — ${metrics.taxaAcertoTrades}% win rate)\n`;
+  md += `- Pontos Mini Índice: ${metrics.totalPontos} pts\n\n`;
+
+  md += `## TABELA HISTÓRICA SESSÃO A SESSÃO\n`;
+  md += `| # | Data | Trades W/L | Mão | Pontos | Bruto | Taxas | Líquido | Acumulado | Horário | Análise do Trader |\n`;
+  md += `|---|---|---|---|---|---|---|---|---|---|---|\n`;
+
+  metrics.historico.forEach(d => {
+    md += `| #${d.pregaoNumero} | ${formatDateBR(d.data)} | ${d.tradesVencedores}W/${d.tradesPerdedores}L | ${d.contratos} cts | ${d.pontos} | ${formatCurrency(d.resultadoBruto)} | ${formatCurrency(d.taxas)} | ${formatCurrency(d.resultadoLiquido)} | ${formatCurrency(d.saldoRealAcumulado)} | ${d.horarioInicio || '--'}-${d.horarioFim || '--'} | ${d.analiseEstrategica || 'Sem notas'} |\n`;
+  });
+
+  md += `\n## INSTRUÇÃO DE ANÁLISE PARA A INTELIGÊNCIA ARTIFICIAL:\n`;
+  md += `Atue como um Engenheiro Sênior de Risco e Gestor de Mesa Proprietária (Prop Firm Risk Manager). Com base nos dados acima:\n`;
+  md += `1. Analise friamente a consistência estatística (relação payoff, assimetria de lotes, horários operados);\n`;
+  md += `2. Identifique os padrões comportamentais de maior sangria financeira e onde residem os acertos técnicos mais consistentes;\n`;
+  md += `3. Projete a viabilidade matemática de aprovação mantendo a regra dos >= 60% de dias positivos e respeitando o limite de 10 pregões;\n`;
+  md += `4. Entregue um plano de ação estrito, sem bajulação, focado exclusivamente em blindar o capital e garantir a aprovação.\n`;
+
+  textarea.value = md;
+  modal.classList.remove('hidden');
+  document.getElementById('copySuccessMsg').classList.add('hidden');
+};
+
+window.closeDossierModal = function() {
+  document.getElementById('modalDossier').classList.add('hidden');
+};
+
+window.copyDossierText = function() {
+  const textarea = document.getElementById('dossierTextarea');
+  textarea.select();
+  navigator.clipboard.writeText(textarea.value).then(() => {
+    const msg = document.getElementById('copySuccessMsg');
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 3000);
+  });
 };
 
 window.editPregao = function(id) {
@@ -594,6 +775,7 @@ window.editPregao = function(id) {
   document.getElementById('inputHorarioInicio').value = dia.horarioInicio || '';
   document.getElementById('inputHorarioFim').value = dia.horarioFim || '';
   document.getElementById('inputSetup').value = dia.setup || '';
+  document.getElementById('inputPrintFile').value = dia.printFile || '';
   document.getElementById('inputAnalise').value = dia.analiseEstrategica || '';
 
   document.getElementById('btnSubmitForm').textContent = 'Atualizar Pregão';
@@ -712,25 +894,4 @@ async function connectLocalDriveFile() {
       alert("Não foi possível conectar ao arquivo: " + err.message);
     }
   }
-}
-
-/**
- * Gestão do Checklist Pré-Pregão
- */
-function loadChecklist() {
-  const saved = localStorage.getItem(CHECKLIST_KEY);
-  if (!saved) return;
-  try {
-    const checks = JSON.parse(saved);
-    document.querySelectorAll('.premarket-check').forEach((chk, idx) => {
-      chk.checked = !!checks[idx];
-    });
-  } catch (e) {
-    console.warn("Erro ao ler checklist", e);
-  }
-}
-
-function saveChecklist() {
-  const checks = Array.from(document.querySelectorAll('.premarket-check')).map(c => c.checked);
-  localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checks));
 }
