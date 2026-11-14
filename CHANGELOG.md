@@ -2,6 +2,15 @@
 
 ---
 
+## v1.2 — 2026-11-14 (Sessão: Resolução de Conflito Serverless Vercel & Deploy 100% Estático)
+
+### 🚀 Infraestrutura de Deploy Vercel (`.vercelignore`, `vercel.json`)
+- **Eliminação do Erro 500 (FUNCTION_INVOCATION_FAILED):** O Vercel estava interpretando o script de servidor local (`server.mjs`) como uma Serverless Function em Node.js com `server.listen()`.
+- **Criação do `.vercelignore`:** Ignora arquivos utilitários locais (`server.mjs`, `iniciar_terminal.bat`, documentações) no build do Vercel.
+- **Configuração de Output Directory Estático:** `vercel.json` configurado com `"framework": null` e `"outputDirectory": "web"`, garantindo que o Vercel sirva o projeto diretamente pelo CDN estático global sem provisionar funções serverless.
+
+---
+
 ## v1.1 — 2026-11-14 (Sessão: Otimização de Deploy Vercel & Compatibilidade Estática)
 
 ### 🚀 Infraestrutura de Deploy Vercel (`package.json`, `vercel.json`, `index.html`)

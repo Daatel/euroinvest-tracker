@@ -1,9 +1,0 @@
-{
-  "name": "euroinvest-tracker",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Terminal Web de Gestão Operacional e Acompanhamento da Avaliação Euroinvest Plano Junior (WIN)",
-  "scripts": {
-    "build": "echo 'Static app ready for deployment'"
-  }
-}

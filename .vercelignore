@@ -1,0 +1,7 @@
+server.mjs
+iniciar_terminal.bat
+*.bat
+*.md
+dados_avaliacao.json
+web/test_calculations.js
+app/
