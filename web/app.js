@@ -3,7 +3,7 @@
  * Versão MVP PropFirmTradeCoach com Calendário Oficial 3 Estrelas
  */
 
-import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent } from './calculations.js';
+import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV } from './calculations.js';
 
 const STORAGE_KEY = 'euroinvest_avaliacao_data_v1';
 
@@ -68,19 +68,23 @@ let appData = {
     tetoConsistenciaDiaria: CONFIG.TETO_CONSISTENCIA_DIA,
     valorPorPontoContrato: CONFIG.VALOR_POR_PONTO_WIN
   },
-  pregoes: []
+  pregoes: [],
+  diasSemOperacao: []
 };
 
 let chartInstance = null;
 let currentChartMode = 'operacional';
 let editingPregaoId = null;
+let stagedImportResult = null;
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
   loadData();
   setupEventListeners();
+  setupCsvImportHandlers();
   determinarProximoDiaRadar();
   renderRadarEventos();
+  verificarLembreteImportacao();
   renderApp();
 });
 
@@ -181,6 +185,9 @@ function loadData() {
         if (!appData.meta) {
           appData.meta = { ...CONFIG };
         }
+        if (!Array.isArray(appData.diasSemOperacao)) {
+          appData.diasSemOperacao = [];
+        }
         return;
       }
     } catch (e) {
@@ -189,6 +196,7 @@ function loadData() {
   }
 
   appData.pregoes = [];
+  appData.diasSemOperacao = [];
 }
 
 function saveData() {
@@ -199,7 +207,7 @@ function saveData() {
  * Renderização central de todos os blocos do dashboard
  */
 function renderApp() {
-  const metrics = calculateMetrics(appData.pregoes, appData.meta || {});
+  const metrics = calculateMetrics(appData.pregoes, appData.meta || {}, appData.diasSemOperacao || []);
 
   renderHeaderStatus(metrics);
   renderKPICards(metrics);
@@ -256,7 +264,8 @@ function renderDiagnosticBanner(m) {
     </div>
     <div class="flex-1 text-sm leading-relaxed">
       <div class="font-semibold text-white mb-0.5">Diagnóstico Estratégico da Avaliação:</div>
-      ${m.diagnostico}
+      <div>${m.diagnostico}</div>
+      ${m.totalDiasSemOperacao > 0 ? `<div class="mt-1.5 font-mono text-xs text-slate-300">• ${m.totalDiasSemOperacao} pregão${m.totalDiasSemOperacao > 1 ? 'ões' : ''} sem operação no período.</div>` : ''}
     </div>
   `;
   if (window.lucide) lucide.createIcons({ root: container });
@@ -1001,3 +1010,188 @@ async function connectLocalDriveFile() {
     }
   }
 }
+
+/**
+ * Lembrete Semanal / Fechamento de Pregão
+ */
+function verificarLembreteImportacao() {
+  const hoje = new Date().toISOString().split('T')[0];
+  const dispensado = localStorage.getItem('euroinvest_lembrete_dispensado');
+  if (dispensado === hoje) return;
+
+  const diaSemana = new Date().getDay(); // 0 = Dom, 5 = Sex, 6 = Sab
+  const hora = new Date().getHours();
+  
+  // Ativa se for sexta-feira após as 17h, final de semana, segunda antes das 12h, ou sem trades
+  const isFechamentoSemana = (diaSemana === 5 && hora >= 17) || diaSemana === 6 || diaSemana === 0;
+  const isInicioSemana = (diaSemana === 1 && hora < 12);
+  const isVazio = !appData.pregoes || appData.pregoes.length === 0;
+
+  if (isFechamentoSemana || isInicioSemana || isVazio) {
+    const alertEl = document.getElementById('alertLembreteRelatorio');
+    if (alertEl) {
+      alertEl.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons({ root: alertEl });
+    }
+  }
+}
+
+window.dispensarLembrete = function() {
+  const hoje = new Date().toISOString().split('T')[0];
+  localStorage.setItem('euroinvest_lembrete_dispensado', hoje);
+  const alertEl = document.getElementById('alertLembreteRelatorio');
+  if (alertEl) alertEl.classList.add('hidden');
+};
+
+/**
+ * Handlers do Modal de Importação CSV
+ */
+window.openModalImportCsv = function() {
+  const modal = document.getElementById('modalImportCsv');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  stagedImportResult = null;
+  const btnConfirm = document.getElementById('btnConfirmImportCsv');
+  if (btnConfirm) btnConfirm.disabled = true;
+  const preview = document.getElementById('csvPreviewArea');
+  if (preview) preview.classList.add('hidden');
+  const txt = document.getElementById('textareaCsvContent');
+  if (txt) txt.value = '';
+  if (window.lucide) lucide.createIcons({ root: modal });
+};
+
+window.closeModalImportCsv = function() {
+  const modal = document.getElementById('modalImportCsv');
+  if (modal) modal.classList.add('hidden');
+  stagedImportResult = null;
+};
+
+function setupCsvImportHandlers() {
+  const dropZone = document.getElementById('dropZoneCsv');
+  const fileInput = document.getElementById('inputCsvFile');
+
+  if (dropZone && fileInput) {
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) lerArquivoCsv(file);
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-sky-400', 'bg-sky-950/20');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-sky-400', 'bg-sky-950/20');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-sky-400', 'bg-sky-950/20');
+      const file = e.dataTransfer.files[0];
+      if (file) lerArquivoCsv(file);
+    });
+  }
+}
+
+function lerArquivoCsv(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    const txtArea = document.getElementById('textareaCsvContent');
+    if (txtArea) txtArea.value = text;
+    window.processarTextoCsv();
+  };
+  reader.readAsText(file);
+}
+
+window.processarTextoCsv = function() {
+  const txtArea = document.getElementById('textareaCsvContent');
+  const previewArea = document.getElementById('csvPreviewArea');
+  const previewTitle = document.getElementById('csvPreviewTitle');
+  const previewDetails = document.getElementById('csvPreviewDetails');
+  const btnConfirm = document.getElementById('btnConfirmImportCsv');
+
+  if (!txtArea || !previewArea) return;
+
+  const raw = txtArea.value.trim();
+  if (!raw) {
+    alert("Cole o conteúdo do CSV ou selecione um arquivo.");
+    return;
+  }
+
+  const result = parseProfitCSV(raw);
+  if (!result || !result.pregoes || result.pregoes.length === 0) {
+    previewArea.classList.remove('hidden');
+    previewArea.className = 'p-3.5 rounded-xl bg-red-950/40 border border-red-800 text-xs font-mono text-red-300';
+    previewTitle.textContent = "Erro na leitura do CSV";
+    previewDetails.textContent = "Não foi possível identificar colunas válidas de data e P&L. Verifique se o arquivo é a exportação de Operações do Profit.";
+    btnConfirm.disabled = true;
+    stagedImportResult = null;
+    return;
+  }
+
+  stagedImportResult = result;
+  previewArea.classList.remove('hidden');
+  previewArea.className = 'p-3.5 rounded-xl bg-sky-950/40 border border-sky-800 text-xs font-mono text-slate-200';
+  
+  const totalTrades = result.totalTrades || 0;
+  previewTitle.textContent = `✓ ${result.pregoes.length} pregão(ões) com trades identificados (${totalTrades} operações).`;
+
+  const semOpMsg = result.diasSemOperacao && result.diasSemOperacao.length > 0
+    ? `• ${result.diasSemOperacao.length} pregão(ões) sem operação identificados no intervalo (${result.diasSemOperacao.join(', ')}).`
+    : '• Nenhum gap de dia útil no período.';
+
+  previewDetails.innerHTML = `
+    <div>${semOpMsg}</div>
+    <div class="mt-1 text-slate-400">Clique em "Salvar no Terminal" para aplicar ao seu histórico oficial.</div>
+  `;
+
+  btnConfirm.disabled = false;
+};
+
+window.confirmarImportacaoCsv = function() {
+  if (!stagedImportResult || !stagedImportResult.pregoes) return;
+
+  // Mapa de pareceres e IDs existentes para preservar
+  const existentesMap = {};
+  for (const p of appData.pregoes) {
+    existentesMap[p.data] = p;
+  }
+
+  // Mescla os novos pregões preservando IDs e parecerCoach se já existiam
+  const novosPregoes = stagedImportResult.pregoes.map((imp) => {
+    const antigo = existentesMap[imp.data];
+    return {
+      id: antigo?.id || `pregao-${imp.data}`,
+      data: imp.data,
+      contratos: imp.contratos,
+      tradesVencedores: imp.tradesVencedores,
+      tradesPerdedores: imp.tradesPerdedores,
+      pontos: imp.pontos,
+      resultadoBruto: imp.resultadoBruto,
+      taxas: imp.taxas,
+      resultadoLiquido: imp.resultadoLiquido,
+      parecerCoach: antigo?.parecerCoach || null
+    };
+  });
+
+  // Atualiza pregoes e ordena por data
+  appData.pregoes = novosPregoes.sort((a, b) => a.data.localeCompare(b.data));
+
+  // Mescla diasSemOperacao sem duplicação
+  const setSemOp = new Set(appData.diasSemOperacao || []);
+  if (Array.isArray(stagedImportResult.diasSemOperacao)) {
+    for (const d of stagedImportResult.diasSemOperacao) {
+      setSemOp.add(d);
+    }
+  }
+  appData.diasSemOperacao = Array.from(setSemOp).sort();
+
+  saveData();
+  renderApp();
+  window.closeModalImportCsv();
+  alert(`Relatório processado com sucesso! ${appData.pregoes.length} pregões atualizados.`);
+};

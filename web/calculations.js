@@ -67,8 +67,9 @@ export function checkAssimetriaLote(pontos, contratos, bruto, valorPonto = CONFI
  * Motor central de cálculo estatístico e regulamentar
  * @param {Array} pregoes Lista de objetos de pregões
  * @param {Object} customConfig Sobrescrita de configurações vindas do JSON ou UI
+ * @param {Array} diasSemOperacao Lista de datas de dias sem operação identificados
  */
-export function calculateMetrics(pregoes = [], customConfig = {}) {
+export function calculateMetrics(pregoes = [], customConfig = {}, diasSemOperacao = []) {
   // Normaliza chaves vindas de customConfig ou JSON meta
   const cfg = {
     META_FINANCEIRA: customConfig.metaFinanceira ?? customConfig.META_FINANCEIRA ?? CONFIG.META_FINANCEIRA,
@@ -79,6 +80,11 @@ export function calculateMetrics(pregoes = [], customConfig = {}) {
     MIN_TAXA_POSITIVOS: customConfig.minTaxaDiasPositivos ?? customConfig.MIN_TAXA_POSITIVOS ?? CONFIG.MIN_TAXA_POSITIVOS,
     VALOR_POR_PONTO_WIN: customConfig.valorPorPontoContrato ?? customConfig.VALOR_POR_PONTO_WIN ?? CONFIG.VALOR_POR_PONTO_WIN
   };
+
+  const diasSemOpList = Array.isArray(diasSemOperacao) && diasSemOperacao.length > 0 
+    ? diasSemOperacao 
+    : (Array.isArray(customConfig.diasSemOperacao) ? customConfig.diasSemOperacao : []);
+  const totalDiasSemOperacao = diasSemOpList.length;
   
   const total = pregoes.length;
   let saldoRealCents = 0;
@@ -245,6 +251,126 @@ export function calculateMetrics(pregoes = [], customConfig = {}) {
     totalPontos,
     totalBruto: fromCents(totalBrutoCents),
     totalTaxas: fromCents(totalTaxasCents),
+    totalDiasSemOperacao,
+    diasSemOperacao: diasSemOpList,
     historico: historicoComProgressao
   };
+}
+
+/**
+ * Parser de Relatório CSV de Operações (Nelogica / Profit)
+ * Lê os trades intradia, agrupa por pregão e identifica dias úteis sem operação no período
+ * @param {string} csvText Conteúdo bruto do arquivo CSV
+ * @returns {Object} { pregoes: Array, diasSemOperacao: Array, totalTrades: number }
+ */
+export function parseProfitCSV(csvText) {
+  if (!csvText || typeof csvText !== 'string') return null;
+
+  const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+
+  const delimiter = lines[0].includes(';') ? ';' : ',';
+  const header = lines[0].split(delimiter).map(h => h.trim());
+  
+  const pnlIntervaloIndex = header.findIndex(h => h.includes('P&L Intervalo'));
+  const pnlTotIndex = header.findIndex(h => h.includes('P&L Total'));
+  const aberturaIndex = header.findIndex(h => h.includes('Abertura'));
+  const statusIndex = header.findIndex(h => h.includes('Status'));
+  const qtdIndex = header.findIndex(h => h.includes('Qtd Compra') || h.includes('Qtd Venda'));
+
+  const pnlIndex = pnlIntervaloIndex !== -1 ? pnlIntervaloIndex : pnlTotIndex;
+  if (aberturaIndex === -1 || pnlIndex === -1) return null;
+
+  const trades = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(delimiter);
+    if (cols.length < 4) continue;
+    const aberturaRaw = cols[aberturaIndex] || '';
+    const [d] = aberturaRaw.split(' ');
+    if (!d || !d.includes('/')) continue;
+    
+    const [dia, mes, ano] = d.split('/');
+    const dateIso = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+
+    const status = cols[statusIndex] || '';
+    const qtd = parseInt(cols[qtdIndex], 10) || 2;
+    const pnlRaw = cols[pnlIndex] || '0';
+    let liquido = 0;
+    let pontos = 0;
+
+    if (pnlRaw.includes('|')) {
+      const parts = pnlRaw.split('|');
+      liquido = parseFloat(parts[0].replace(/\./g, '').replace(',', '.').trim()) || 0;
+      pontos = parseFloat(parts[1].trim()) || 0;
+    } else {
+      liquido = parseFloat(pnlRaw.replace(/\./g, '').replace(',', '.').trim()) || 0;
+    }
+
+    const valorPontoWin = CONFIG.VALOR_POR_PONTO_WIN;
+    const bruto = Math.round(pontos * valorPontoWin * qtd * 100) / 100;
+    const taxas = Math.round(Math.max(0, bruto - liquido) * 100) / 100;
+
+    trades.push({ dateIso, status, qtd, pontos, bruto, taxas, liquido });
+  }
+
+  if (trades.length === 0) return { pregoes: [], diasSemOperacao: [], totalTrades: 0 };
+
+  // Agrupa trades por data
+  const diasMap = {};
+  for (const t of trades) {
+    if (!diasMap[t.dateIso]) {
+      diasMap[t.dateIso] = {
+        data: t.dateIso,
+        pontos: 0,
+        resultadoBruto: 0,
+        taxas: 0,
+        resultadoLiquido: 0,
+        tradesVencedores: 0,
+        tradesPerdedores: 0,
+        maxContratos: 0
+      };
+    }
+    const d = diasMap[t.dateIso];
+    d.pontos += t.pontos;
+    d.resultadoBruto += t.bruto;
+    d.taxas += t.taxas;
+    d.resultadoLiquido += t.liquido;
+    if (t.status.toLowerCase().includes('venc')) d.tradesVencedores++;
+    else if (t.status.toLowerCase().includes('perd')) d.tradesPerdedores++;
+    d.maxContratos = Math.max(d.maxContratos, t.qtd);
+  }
+
+  const sortedDates = Object.keys(diasMap).sort();
+  const minDate = new Date(`${sortedDates[0]}T00:00:00`);
+  const maxDate = new Date(`${sortedDates[sortedDates.length - 1]}T00:00:00`);
+
+  // Detecta dias úteis no período sem trades (assumidos diretamente como sem operação)
+  const diasSemOperacao = [];
+  const cur = new Date(minDate);
+  while (cur <= maxDate) {
+    const dayOfWeek = cur.getDay(); // 0 = Dom, 6 = Sab
+    const iso = cur.toISOString().split('T')[0];
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      if (!diasMap[iso]) {
+        diasSemOperacao.push(iso);
+      }
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const pregoes = sortedDates.map((dateIso) => {
+    const d = diasMap[dateIso];
+    return {
+      data: d.data,
+      contratos: d.maxContratos || 2,
+      pontos: Math.round(d.pontos * 10) / 10,
+      resultadoBruto: Math.round(d.resultadoBruto * 100) / 100,
+      taxas: Math.round(d.taxas * 100) / 100,
+      resultadoLiquido: Math.round(d.resultadoLiquido * 100) / 100,
+      tradesVencedores: d.tradesVencedores,
+      tradesPerdedores: d.tradesPerdedores
+    };
+  });
+
+  return { pregoes, diasSemOperacao, totalTrades: trades.length };
 }

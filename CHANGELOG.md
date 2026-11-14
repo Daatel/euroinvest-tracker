@@ -2,6 +2,17 @@
 
 ---
 
+## v1.6 — 2026-11-14 (Sessão: Importador de CSV do Profit, Gestão de Dias Sem Operação e Lembrete)
+
+### 🚀 Importador de Relatório & Métricas Neutras (`web/calculations.js`, `web/index.html`, `web/app.js`)
+- **Parser de Operações do Profit (`parseProfitCSV`):** Leitura direta de relatórios exportados pela Nelogica/Profit (separadores `;` ou `,`), consolidando automaticamente trades intradia em pregões com cálculo fiel de pontos, bruto, taxas, líquido e contratos.
+- **Detecção Automática de Pregões Sem Operação:** Identificação de dias úteis sem trades no intervalo do relatório, assumindo-os automaticamente como sem operação sem bloquear o fluxo com perguntas desnecessárias.
+- **Diagnóstico Estratégico Sóbrio:** Inclusão direta e impessoal da métrica no painel estratégico (`X pregões sem operação no período.`), sem afetar a contagem matemática dos 10 pregões operados nem a taxa de consistência.
+- **Modal de Importação de CSV:** Botão `[ Importar CSV ]` no cabeçalho com drag-and-drop de arquivos `.csv`, colagem de texto e pré-visualização antes da gravação no terminal.
+- **Alerta de Lembrete no Topo:** Banner informativo ao final do pregão/semana lembrando o trader de importar o relatório da corretora, com botão de ação direta e opção de dispensar.
+
+---
+
 ## v1.5 — 2026-11-14 (Sessão: Calendário Econômico Oficial Investing.com e Navegação por Pregão)
 
 ### 🚀 Radar de Eventos & Usabilidade (`web/index.html`, `web/app.js`)

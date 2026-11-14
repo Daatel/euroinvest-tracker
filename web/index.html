@@ -102,6 +102,11 @@
           <span>Dossiê IA</span>
         </button>
 
+        <button id="btnOpenImportCsv" onclick="window.openModalImportCsv()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-sky-950/70 hover:bg-sky-900/80 text-sky-300 border border-sky-700 transition-colors shadow-sm" title="Importar relatório semanal de operações do Profit (CSV)">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400"></i>
+          <span>Importar CSV</span>
+        </button>
+
         <button id="btnConnectDrive" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors shadow-sm" title="Conectar arquivo JSON no Google Drive">
           <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i>
           <span>Drive</span>
@@ -119,6 +124,26 @@
         <input type="file" id="fileInputImport" accept=".json" class="hidden">
       </div>
     </header>
+
+    <!-- Alerta de Lembrete de Importação Semanal -->
+    <div id="alertLembreteRelatorio" class="hidden rounded-xl bg-amber-950/30 border border-amber-800/80 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200 shadow-sm transition-all">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-lg bg-amber-900/50 text-amber-400 shrink-0">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+        </div>
+        <div class="leading-relaxed">
+          <span class="font-bold text-amber-300">Lembrete de Fechamento:</span> Finalizou a semana ou o pregão? Importe o relatório de operações da corretora/Profit para auditar sua consistência.
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+        <button onclick="window.openModalImportCsv()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors text-xs shadow-sm">
+          Importar Agora
+        </button>
+        <button onclick="window.dispensarLembrete()" class="p-1.5 rounded-lg hover:bg-amber-900/40 text-amber-400 hover:text-white transition-colors" title="Dispensar lembrete">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
 
     <!-- Radar Oficial de Eventos 3 Estrelas (Investing.com) com Navegação por Dia -->
     <section class="rounded-xl bg-slate-900/60 border border-slate-800 p-4 transition-all">
@@ -509,6 +534,59 @@
           </button>
           <button onclick="window.closeDossierModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
             Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Importação de Relatório CSV do Profit -->
+  <div id="modalImportCsv" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="file-spreadsheet" class="w-5 h-5 text-sky-400"></i>
+          <h3 class="text-sm font-bold text-white">Importar Relatório de Operações (Profit / Nelogica)</h3>
+        </div>
+        <button onclick="window.closeModalImportCsv()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Selecione o arquivo CSV exportado pelo Profit (menu <em>Relatório de Performance > Operações > Exportar</em>) ou cole o conteúdo do relatório no campo abaixo. Os trades serão consolidados automaticamente por data.
+      </p>
+
+      <!-- Área de Drop / Seleção de Arquivo -->
+      <div id="dropZoneCsv" class="border-2 border-dashed border-slate-700 hover:border-sky-500 rounded-xl p-5 text-center cursor-pointer bg-slate-950/40 hover:bg-slate-900/60 transition-all">
+        <i data-lucide="upload-cloud" class="w-8 h-8 text-sky-400 mx-auto mb-2"></i>
+        <div class="text-xs font-medium text-slate-200">Clique para selecionar o arquivo CSV ou arraste aqui</div>
+        <div class="text-[11px] text-slate-500 mt-1">Formato suportado: .csv do Profit / Nelogica</div>
+        <input type="file" id="inputCsvFile" accept=".csv,text/csv" class="hidden">
+      </div>
+
+      <!-- Ou Colar Conteúdo -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Ou cole o texto do relatório CSV:</label>
+        <textarea id="textareaCsvContent" rows="6" placeholder="Ativo;Status;Abertura;Fechamento;Duração;Qtd Compra;Qtd Venda;Preço de Compra..." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none focus:border-sky-500"></textarea>
+      </div>
+
+      <!-- Pré-visualização do resultado do parser -->
+      <div id="csvPreviewArea" class="hidden p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 text-xs space-y-1.5 font-mono">
+        <div id="csvPreviewTitle" class="font-bold text-sky-400"></div>
+        <div id="csvPreviewDetails" class="text-slate-300 text-[11px]"></div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+        <button id="btnProcessCsvPreview" onclick="window.processarTextoCsv()" class="px-4 py-2 rounded-xl text-xs font-medium text-sky-300 bg-sky-950/80 hover:bg-sky-900 border border-sky-800 transition-colors">
+          Pré-visualizar
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button id="btnConfirmImportCsv" onclick="window.confirmarImportacaoCsv()" disabled class="px-4 py-2 rounded-xl text-xs font-medium text-white bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm flex items-center gap-1.5">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar no Terminal
+          </button>
+          <button onclick="window.closeModalImportCsv()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+            Cancelar
           </button>
         </div>
       </div>
