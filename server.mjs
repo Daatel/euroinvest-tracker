@@ -20,12 +20,15 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
   let reqPath = req.url.split('?')[0];
   if (reqPath === '/' || reqPath === '') {
-    reqPath = '/web/index.html';
+    reqPath = '/index.html';
   } else if (reqPath === '/web' || reqPath === '/web/') {
     reqPath = '/web/index.html';
   }
 
-  const filePath = path.join(__dirname, reqPath);
+  let filePath = path.join(__dirname, reqPath);
+  if (!fs.existsSync(filePath) && fs.existsSync(path.join(__dirname, 'web', reqPath))) {
+    filePath = path.join(__dirname, 'web', reqPath);
+  }
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
@@ -51,6 +54,6 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`\n========================================================`);
   console.log(`  TERMINAL DE AVALIAÇÃO EUROINVEST OPERACIONAL`);
-  console.log(`  Endereço Local: http://localhost:${PORT}/web/`);
+  console.log(`  Endereço Local: http://localhost:${PORT}/`);
   console.log(`========================================================\n`);
 });

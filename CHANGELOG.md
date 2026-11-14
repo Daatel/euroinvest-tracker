@@ -2,6 +2,15 @@
 
 ---
 
+## v1.1 — 2026-11-14 (Sessão: Otimização de Deploy Vercel & Compatibilidade Estática)
+
+### 🚀 Infraestrutura de Deploy Vercel (`package.json`, `vercel.json`, `index.html`)
+- **Resolução do Erro Rollup/Vite:** Remoção das configurações residuais de build do Vite na pasta `app/` que procuravam um `index.html` não localizado.
+- **Estrutura Estática Universal:** `index.html`, `app.js` e `calculations.js` espelhados tanto na raiz quanto na pasta `app/` e `web/`, garantindo que o deploy na Vercel funcione com sucesso imediato em qualquer diretório base (Root ou Subdiretório).
+- **Scripts de Build Instantâneo:** Configuração de script de build leve sem dependências pesadas de compilação, permitindo publicação instantânea em menos de 5 segundos no Edge da Vercel.
+
+---
+
 ## v1.0 — 2026-11-13 (Sessão: Criação do Terminal Web de Acompanhamento da Mesa Proprietária)
 
 ### 🚀 Terminal Web & Dashboard Financeiro (`web/index.html`, `web/app.js`, `web/calculations.js`)
