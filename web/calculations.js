@@ -57,19 +57,28 @@ export function formatPercent(value) {
  * Validação de Assimetria de Lote no pregão
  * Retorna true se houver discrepância significativa entre pontos * 0.20 * contratos e o bruto
  */
-export function checkAssimetriaLote(pontos, contratos, bruto) {
+export function checkAssimetriaLote(pontos, contratos, bruto, valorPonto = CONFIG.VALOR_POR_PONTO_WIN) {
   if (!pontos || !contratos || bruto === undefined || bruto === null) return false;
-  const estimado = Number(pontos) * CONFIG.VALOR_POR_PONTO_WIN * Number(contratos);
+  const estimado = Number(pontos) * valorPonto * Number(contratos);
   return Math.abs(estimado - Number(bruto)) > 2.00;
 }
 
 /**
  * Motor central de cálculo estatístico e regulamentar
  * @param {Array} pregoes Lista de objetos de pregões
- * @param {Object} customConfig Sobrescrita de configurações (opcional)
+ * @param {Object} customConfig Sobrescrita de configurações vindas do JSON ou UI
  */
 export function calculateMetrics(pregoes = [], customConfig = {}) {
-  const cfg = { ...CONFIG, ...customConfig };
+  // Normaliza chaves vindas de customConfig ou JSON meta
+  const cfg = {
+    META_FINANCEIRA: customConfig.metaFinanceira ?? customConfig.META_FINANCEIRA ?? CONFIG.META_FINANCEIRA,
+    PISO_DRAWDOWN: customConfig.pisoDrawdown ?? customConfig.PISO_DRAWDOWN ?? CONFIG.PISO_DRAWDOWN,
+    TETO_CONSISTENCIA_DIA: customConfig.tetoConsistenciaDiaria ?? customConfig.TETO_CONSISTENCIA_DIA ?? CONFIG.TETO_CONSISTENCIA_DIA,
+    MAX_PREGOES: customConfig.maxPregões ?? customConfig.maxPregoes ?? customConfig.MAX_PREGOES ?? CONFIG.MAX_PREGOES,
+    MIN_PREGOES: customConfig.minPregões ?? customConfig.minPregoes ?? customConfig.MIN_PREGOES ?? CONFIG.MIN_PREGOES,
+    MIN_TAXA_POSITIVOS: customConfig.minTaxaDiasPositivos ?? customConfig.MIN_TAXA_POSITIVOS ?? CONFIG.MIN_TAXA_POSITIVOS,
+    VALOR_POR_PONTO_WIN: customConfig.valorPorPontoContrato ?? customConfig.VALOR_POR_PONTO_WIN ?? CONFIG.VALOR_POR_PONTO_WIN
+  };
   
   const total = pregoes.length;
   let saldoRealCents = 0;
@@ -152,7 +161,6 @@ export function calculateMetrics(pregoes = [], customConfig = {}) {
   }
 
   // Margem Livre até o Piso (R$ 2.835,00)
-  // pisoDrawdown é -2835.00. Margem livre = saldoReal - (-2835.00)
   const margemLivrePiso = Number((saldoReal - cfg.PISO_DRAWDOWN).toFixed(2));
   const percentualDrawdownUsado = Math.min(100, Math.max(0, ((-Math.min(0, saldoReal)) / Math.abs(cfg.PISO_DRAWDOWN)) * 100));
 
@@ -192,6 +200,10 @@ export function calculateMetrics(pregoes = [], customConfig = {}) {
     status = 'PRAZO_ESGOTADO';
     badgeColor = 'bg-orange-950/80 text-orange-400 border-orange-700';
     diagnostico = `10 pregões atingidos sem cumprir todas as condições. Saldo atual: ${formatCurrency(saldoApurado)}.`;
+  } else if (total === 0) {
+    status = 'AGUARDANDO_DADOS';
+    badgeColor = 'bg-slate-800 text-slate-300 border-slate-700';
+    diagnostico = `Nenhum pregão registrado ainda. Clique em "Restaurar" para carregar seu arquivo de backup (dados_avaliacao.json) ou use o formulário para registrar o pregão de hoje.`;
   } else {
     status = 'EM_ANDAMENTO';
     badgeColor = 'bg-slate-800 text-slate-300 border-slate-700';

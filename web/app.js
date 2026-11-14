@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * Carrega os dados do LocalStorage ou do arquivo JSON inicial padrão
+ * Carrega os dados do LocalStorage (privacidade: sem seed fixo de trades no código público)
  */
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,53 +46,18 @@ function loadData() {
       const parsed = JSON.parse(saved);
       if (parsed && Array.isArray(parsed.pregoes)) {
         appData = parsed;
+        if (!appData.meta) {
+          appData.meta = { ...CONFIG };
+        }
         return;
       }
     } catch (e) {
-      console.warn("Erro ao ler LocalStorage, revertendo para dados iniciais", e);
+      console.warn("Erro ao ler LocalStorage", e);
     }
   }
 
-  // Dados iniciais padrão (dias 12/11 e 13/11 auditados)
-  appData.pregoes = [
-    {
-      id: "pregao-2026-11-12",
-      data: "2026-11-12",
-      contratos: 2,
-      tradesVencedores: 1,
-      tradesPerdedores: 4,
-      tradesTotal: 5,
-      pontos: 15.0,
-      resultadoBruto: -54.00,
-      taxas: 8.09,
-      resultadoLiquido: -62.09,
-      saldoApuradoDia: -62.09,
-      horarioInicio: "13:46",
-      horarioFim: "17:02",
-      setup: "Price Action / Estruturas",
-      assimetriaLote: true,
-      analiseEstrategica: "Operou fora da janela ideal (tarde). Trade 2 tomou loss com 4 contratos (-150 pts = -R$ 120), enquanto o gain de +310 pts foi com apenas 2 contratos (+R$ 124). Houve reentrada imediata às 16:49 após stop. Lição: manter tamanho de mão simétrico (2 contratos fixos) e respeitar o fim da manhã."
-    },
-    {
-      id: "pregao-2026-11-13",
-      data: "2026-11-13",
-      contratos: 2,
-      tradesVencedores: 5,
-      tradesPerdedores: 1,
-      tradesTotal: 6,
-      pontos: 822.5,
-      resultadoBruto: 329.00,
-      taxas: 8.82,
-      resultadoLiquido: 320.18,
-      saldoApuradoDia: 320.18,
-      horarioInicio: "09:05",
-      horarioFim: "10:12",
-      setup: "VWAP e Volume Profile (POC/VAH/VAL)",
-      assimetriaLote: false,
-      analiseEstrategica: "Execução perfeita na janela matinal (1h07 de tela). 100% na mão base de 2 contratos. Payoff de 3.49x. Único stop às 10:00 (abertura à vista) foi curto (-45 pts) e encerrado prontamente. Entrada seguinte limpa (+250 pts) e encerramento imediato do dia."
-    }
-  ];
-  saveData();
+  // Inicializa limpo: o trader importa seu dados_avaliacao.json pelo botão Restaurar
+  appData.pregoes = [];
 }
 
 function saveData() {
@@ -103,7 +68,8 @@ function saveData() {
  * Renderização central de todos os blocos do dashboard
  */
 function renderApp() {
-  const metrics = calculateMetrics(appData.pregoes);
+  // Passa as configurações do objeto meta para o motor de cálculos
+  const metrics = calculateMetrics(appData.pregoes, appData.meta || {});
 
   renderHeaderStatus(metrics);
   renderKPICards(metrics);
@@ -118,13 +84,14 @@ function renderApp() {
 function renderHeaderStatus(m) {
   const badge = document.getElementById('statusBadge');
   if (badge) {
-    badge.className = `px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border ${m.badgeColor}`;
+    badge.className = `px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border ${m.badgeColor}`;
     let label = 'Em Andamento';
     if (m.status === 'APROVADO') label = 'Aprovado na Avaliação';
     else if (m.status === 'META_BATIDA_PENDENTE') label = 'Meta Batida (Pendente Dias)';
     else if (m.status === 'REPROVADO_PISO') label = 'Piso Rompido';
     else if (m.status === 'PRAZO_ESGOTADO') label = 'Prazo Esgotado';
-    badge.textContent = `${label} (${m.totalPregoes}/${CONFIG.MAX_PREGOES} Pregões)`;
+    else if (m.status === 'AGUARDANDO_DADOS') label = 'Aguardando Lançamentos';
+    badge.textContent = `${label} (${m.totalPregoes}/${m.config.MAX_PREGOES} Pregões)`;
   }
 }
 
@@ -147,6 +114,9 @@ function renderDiagnosticBanner(m) {
   } else if (m.status === 'REPROVADO_PISO') {
     borderClass = 'border-red-600 bg-red-950/40 text-red-200';
     icon = 'x-circle';
+  } else if (m.status === 'AGUARDANDO_DADOS') {
+    borderClass = 'border-slate-700 bg-slate-900/60 text-slate-300';
+    icon = 'database';
   }
 
   container.className = `p-4 rounded-xl border flex items-start gap-3 transition-all ${borderClass}`;
@@ -166,17 +136,19 @@ function renderDiagnosticBanner(m) {
  * Renderiza os 5 Cards de KPIs
  */
 function renderKPICards(m) {
+  const metaAlvo = m.config.META_FINANCEIRA;
+
   // Card 1: Saldo Real vs Saldo Apurado
   document.getElementById('cardSaldoReal').textContent = formatCurrency(m.saldoReal, true);
   document.getElementById('cardSaldoApurado').textContent = formatCurrency(m.saldoApurado, true);
   
-  const progressoMeta = Math.min(100, Math.max(0, (m.saldoApurado / CONFIG.META_FINANCEIRA) * 100));
+  const progressoMeta = metaAlvo > 0 ? Math.min(100, Math.max(0, (m.saldoApurado / metaAlvo) * 100)) : 0;
   const barraSaldo = document.getElementById('progressBarSaldo');
   if (barraSaldo) {
     barraSaldo.style.width = `${progressoMeta}%`;
-    barraSaldo.className = `h-full rounded-full transition-all duration-500 ${m.saldoApurado >= CONFIG.META_FINANCEIRA ? 'bg-emerald-500' : 'bg-emerald-400'}`;
+    barraSaldo.className = `h-full rounded-full transition-all duration-500 ${m.saldoApurado >= metaAlvo ? 'bg-emerald-500' : 'bg-emerald-400'}`;
   }
-  document.getElementById('cardSaldoProgressoTexto').textContent = `${progressoMeta.toFixed(1)}% de R$ 1.400,00`;
+  document.getElementById('cardSaldoProgressoTexto').textContent = `${progressoMeta.toFixed(1)}% de ${formatCurrency(metaAlvo)}`;
 
   // Card 2: Meta Diária Recalibrada
   const metaDiariaEl = document.getElementById('cardMetaDiaria');
@@ -198,7 +170,10 @@ function renderKPICards(m) {
   document.getElementById('cardTaxaPositivos').textContent = formatPercent(m.taxaDiasPositivos);
   const badgePositivos = document.getElementById('cardBadgePositivos');
   if (badgePositivos) {
-    if (m.taxaDiasPositivos >= CONFIG.MIN_TAXA_POSITIVOS) {
+    if (m.totalPregoes === 0) {
+      badgePositivos.textContent = 'Sem pregões';
+      badgePositivos.className = 'text-xs text-slate-500';
+    } else if (m.taxaDiasPositivos >= m.config.MIN_TAXA_POSITIVOS) {
       badgePositivos.textContent = '🟢 Conforme (≥ 60%)';
       badgePositivos.className = 'text-xs font-semibold text-emerald-400';
     } else {
@@ -210,10 +185,11 @@ function renderKPICards(m) {
 
   // Card 4: Margem Livre até o Piso
   document.getElementById('cardMargemPiso').textContent = formatCurrency(m.margemLivrePiso);
-  document.getElementById('cardPisoSub').textContent = `Piso em -R$ 2.835,00 • ${m.percentualDrawdownUsado.toFixed(1)}% do limite usado`;
+  document.getElementById('cardPisoSub').textContent = `Piso em ${formatCurrency(m.config.PISO_DRAWDOWN)} • ${m.percentualDrawdownUsado.toFixed(1)}% do limite usado`;
   const barraPiso = document.getElementById('progressBarPiso');
   if (barraPiso) {
-    barraPiso.style.width = `${Math.min(100, (m.margemLivrePiso / 2835) * 100)}%`;
+    const pisoAbs = Math.abs(m.config.PISO_DRAWDOWN) || 2835;
+    barraPiso.style.width = `${Math.min(100, Math.max(0, (m.margemLivrePiso / pisoAbs) * 100))}%`;
   }
 
   // Card 5: Acerto de Operações (Trades)
@@ -235,11 +211,14 @@ function renderChart(m) {
   const targetData = [];
   const floorData = [];
 
-  // Gera dados para os 10 pregões
-  for (let i = 1; i <= CONFIG.MAX_PREGOES; i++) {
+  const maxDays = m.config.MAX_PREGOES || 10;
+  const metaAlvo = m.config.META_FINANCEIRA;
+  const pisoAlvo = m.config.PISO_DRAWDOWN;
+
+  for (let i = 1; i <= maxDays; i++) {
     labels.push(`Pregão ${i}`);
-    targetData.push(CONFIG.META_FINANCEIRA);
-    floorData.push(CONFIG.PISO_DRAWDOWN);
+    targetData.push(metaAlvo);
+    floorData.push(pisoAlvo);
 
     const diaReal = m.historico[i - 1];
     if (diaReal) {
@@ -289,7 +268,7 @@ function renderChart(m) {
     },
     {
       type: 'line',
-      label: 'Teto da Aprovação (+R$ 1.400,00)',
+      label: `Teto da Aprovação (+${formatCurrency(metaAlvo)})`,
       data: targetData,
       borderColor: '#34D399',
       borderWidth: 2,
@@ -303,7 +282,7 @@ function renderChart(m) {
   if (currentChartMode === 'completa') {
     datasets.push({
       type: 'line',
-      label: 'Piso de Perda Total (-R$ 2.835,00)',
+      label: `Piso de Perda Total (${formatCurrency(pisoAlvo)})`,
       data: floorData,
       borderColor: '#F87171',
       borderWidth: 2,
@@ -382,7 +361,7 @@ function renderHistoryTable(m) {
   if (!tbody) return;
 
   if (m.historico.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="py-8 text-center text-slate-500">Nenhum pregão registrado ainda.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para importar o arquivo de backup.</td></tr>`;
     return;
   }
 
@@ -444,7 +423,7 @@ function setupEventListeners() {
     toggleBtn.addEventListener('click', () => {
       currentChartMode = currentChartMode === 'operacional' ? 'completa' : 'operacional';
       toggleBtn.textContent = currentChartMode === 'operacional' ? 'Ver Escala Completa (Piso)' : 'Foco Operacional (Zoom)';
-      renderChart(calculateMetrics(appData.pregoes));
+      renderChart(calculateMetrics(appData.pregoes, appData.meta || {}));
     });
   }
 
@@ -463,7 +442,8 @@ function setupEventListeners() {
 
     const pontos = parseFloat(inputPontos.value) || 0;
     const contratos = parseInt(inputContratos.value) || 2;
-    const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto);
+    const valorPonto = appData.meta?.valorPorPontoContrato || CONFIG.VALOR_POR_PONTO_WIN;
+    const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto, valorPonto);
 
     const warningEl = document.getElementById('assimetriaWarning');
     if (warningEl) {
@@ -528,12 +508,13 @@ function handleFormSubmit() {
     if (!confirm(`Já existe um pregão registrado na data ${formatDateBR(data)}. Deseja sobrescrever os dados desse dia?`)) {
       return;
     }
-    // Remove o antigo para substituir
     appData.pregoes.splice(existingIndex, 1);
   }
 
   const liquido = Number((bruto - taxas).toFixed(2));
-  const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto);
+  const valorPonto = appData.meta?.valorPorPontoContrato || CONFIG.VALOR_POR_PONTO_WIN;
+  const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto, valorPonto);
+  const tetoConsistencia = appData.meta?.tetoConsistenciaDiaria || CONFIG.TETO_CONSISTENCIA_DIA;
 
   const pregaoObj = {
     id: editingPregaoId || `pregao-${data}`,
@@ -546,7 +527,7 @@ function handleFormSubmit() {
     resultadoBruto: bruto,
     taxas,
     resultadoLiquido: liquido,
-    saldoApuradoDia: Math.min(liquido, CONFIG.TETO_CONSISTENCIA_DIA),
+    saldoApuradoDia: Math.min(liquido, tetoConsistencia),
     horarioInicio,
     horarioFim,
     setup,
@@ -618,7 +599,6 @@ window.editPregao = function(id) {
   document.getElementById('btnSubmitForm').textContent = 'Atualizar Pregão';
   document.getElementById('btnCancelEdit').classList.remove('hidden');
 
-  // Trigger input calculations
   document.getElementById('inputBruto').dispatchEvent(new Event('input'));
   window.scrollTo({ top: document.getElementById('tradeForm').offsetTop - 80, behavior: 'smooth' });
 };
@@ -660,7 +640,7 @@ function exportJsonData() {
 }
 
 /**
- * Importa backup JSON com validação de formato
+ * Importa backup JSON com validação de formato e atualização de meta
  */
 function importJsonData(e) {
   const file = e.target.files[0];
@@ -674,8 +654,11 @@ function importJsonData(e) {
         throw new Error("Arquivo JSON inválido. O campo 'pregoes' deve ser uma lista.");
       }
 
-      if (confirm(`Arquivo validado com ${parsed.pregoes.length} pregões. Deseja restaurar este backup e substituir os dados atuais?`)) {
+      if (confirm(`Arquivo validado com ${parsed.pregoes.length} pregões. Deseja carregar este backup?`)) {
         appData = parsed;
+        if (!appData.meta) {
+          appData.meta = { ...CONFIG };
+        }
         saveData();
         renderApp();
         alert("Backup importado com sucesso!");
@@ -692,7 +675,7 @@ function importJsonData(e) {
  */
 async function connectLocalDriveFile() {
   if (!('showOpenFilePicker' in window)) {
-    alert("A File System Access API está disponível apenas em navegadores Chromium (Chrome/Edge no desktop). Use os botões Exportar/Importar JSON para backup.");
+    alert("A File System Access API está disponível em navegadores Chromium no desktop (Chrome/Edge). Em outros dispositivos, utilize os botões Backup JSON / Restaurar.");
     return;
   }
 
@@ -711,6 +694,9 @@ async function connectLocalDriveFile() {
 
     if (parsed && Array.isArray(parsed.pregoes)) {
       appData = parsed;
+      if (!appData.meta) {
+        appData.meta = { ...CONFIG };
+      }
       saveData();
       renderApp();
       document.getElementById('driveIndicator').innerHTML = `

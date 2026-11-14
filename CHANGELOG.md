@@ -2,6 +2,15 @@
 
 ---
 
+## v1.3 — 2026-11-14 (Sessão: Blindagem de Privacidade e Configuração Explícita Vercel)
+
+### 🚀 Segurança, Privacidade & Vercel (`web/app.js`, `web/calculations.js`, `vercel.json`)
+- **Proteção de Dados Pessoais:** Remoção dos trades reais fixados no código-fonte público (`app.js`). O aplicativo agora inicializa com estado limpo, permitindo que o trader carregue sua base auditada através do botão "Restaurar" a partir do arquivo local `dados_avaliacao.json`.
+- **Parametrização Dinâmica do Objeto `meta`:** `calculations.js` agora lê e prioriza dinamicamente as metas, pisos e parâmetros regulamentares importados do JSON (`metaFinanceira`, `pisoDrawdown`, `tetoConsistenciaDiaria`, `maxPregões`).
+- **Configuração Canônica Vercel (`vercel.json`):** Declaração explícita de `buildCommand: null`, `installCommand: null`, `framework: null`, `outputDirectory: "web"` e `cleanUrls: true` para garantir build estático puro sem interferência de scripts serverless.
+
+---
+
 ## v1.2 — 2026-11-14 (Sessão: Resolução de Conflito Serverless Vercel & Deploy 100% Estático)
 
 ### 🚀 Infraestrutura de Deploy Vercel (`.vercelignore`, `vercel.json`)
