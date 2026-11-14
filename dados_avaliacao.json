@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "meta": {
+    "plano": "Euroinvest Plano Junior (WIN)",
+    "trader": "Marcio Leite",
+    "metaFinanceira": 1400.00,
+    "pisoDrawdown": -2835.00,
+    "maxPregões": 10,
+    "minPregões": 5,
+    "minTaxaDiasPositivos": 60.0,
+    "tetoConsistenciaDiaria": 700.00,
+    "valorPorPontoContrato": 0.20
+  },
+  "pregoes": [
+    {
+      "id": "pregao-2026-11-12",
+      "data": "2026-11-12",
+      "contratos": 2,
+      "tradesVencedores": 1,
+      "tradesPerdedores": 4,
+      "tradesTotal": 5,
+      "pontos": 15.0,
+      "resultadoBruto": -54.00,
+      "taxas": 8.09,
+      "resultadoLiquido": -62.09,
+      "saldoApuradoDia": -62.09,
+      "horarioInicio": "13:46",
+      "horarioFim": "17:02",
+      "setup": "Price Action / Estruturas",
+      "assimetriaLote": true,
+      "analiseEstrategica": "Operou fora da janela ideal (tarde). Trade 2 tomou loss com 4 contratos (-150 pts = -R$ 120), enquanto o gain de +310 pts foi com apenas 2 contratos (+R$ 124). Houve reentrada imediata às 16:49 após stop. Lição: manter tamanho de mão simétrico (2 contratos fixos) e parar na janela da manhã."
+    },
+    {
+      "id": "pregao-2026-11-13",
+      "data": "2026-11-13",
+      "contratos": 2,
+      "tradesVencedores": 5,
+      "tradesPerdedores": 1,
+      "tradesTotal": 6,
+      "pontos": 822.5,
+      "resultadoBruto": 329.00,
+      "taxas": 8.82,
+      "resultadoLiquido": 320.18,
+      "saldoApuradoDia": 320.18,
+      "horarioInicio": "09:05",
+      "horarioFim": "10:12",
+      "setup": "VWAP e Volume Profile (POC/VAH/VAL)",
+      "assimetriaLote": false,
+      "analiseEstrategica": "Execução perfeita na janela matinal (1h07 de tela). 100% na mão base de 2 contratos. Payoff de 3.49x. Único stop às 10:00 (abertura à vista) foi curto (-45 pts) e encerrado prontamente. Entrada seguinte limpa (+250 pts) e encerramento imediato do dia."
+    }
+  ]
+}
