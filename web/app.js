@@ -3,7 +3,7 @@
  * Versão MVP PropFirmTradeCoach com Calendário Oficial 3 Estrelas
  */
 
-import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV, calculateRiskTiers } from './calculations.js';
+import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV, calculateRiskTiers, isPregaoConsolidado } from './calculations.js';
 
 const STORAGE_KEY = 'euroinvest_avaliacao_data_v1';
 
@@ -174,8 +174,76 @@ window.selecionarDiaRadar = function(dataKey) {
   renderRadarEventos();
 };
 
+const AUDITED_INITIAL_PREGOES = [
+  {
+    id: "pregao-2026-11-12",
+    data: "2026-11-12",
+    contratos: 2,
+    tradesVencedores: 1,
+    tradesPerdedores: 4,
+    tradesTotal: 5,
+    pontos: 15.0,
+    resultadoBruto: -54.00,
+    taxas: 8.09,
+    resultadoLiquido: -62.09,
+    saldoApuradoDia: -62.09,
+    horarioInicio: "13:46",
+    horarioFim: "17:02",
+    setup: "Price Action / Consolidação",
+    assimetriaLote: true,
+    consolidado: true,
+    analiseEstrategica: "Operação aberta fora do horário estipulado (pós-meio-dia). Entrada com 2 contratos na consolidação, adicionados mais 2 contratos esperando retomada que não ocorreu, gerando loss. O Trade 3 foi excelente (+310 pts), recuperando o dia e empatando a conta. O erro residiu em não desligar a tela naquele momento e insistir em operar à tarde num mercado com baixo volume e volatilidade, sofrendo 2 losses adicionais no fim do dia. Ponto positivo: encerrou a sessão com perda controlada (-R$ 62,09), prevenindo o aumento do drawdown e eliminando qualquer risco de dia de fúria.",
+    parecerCoach: {
+      veredito: "DESVIO DE JANELA & ASSIMETRIA DE LOTE",
+      sintese: "A leitura técnica encerrou o dia com saldo positivo em pontos (+15,0 pts), contudo a eficiência financeira foi anulada pela assimetria de lote no Trade 2 e pela insistência em operar no período vespertino.",
+      acertos: [
+        "Leitura técnica e execução do Trade 3 (+310 pts com 2 contratos) foram de alta precisão, recuperando integralmente o prejuízo anterior.",
+        "Maturidade e disciplina de corte final: encerrou a sessão com perda contida em R$ 62,09, preservando o capital e evitando escalada de risco."
+      ],
+      erros: [
+        "Infração da janela operacional: primeira entrada executada às 13h46, contrariando a regra de operar exclusivamente pela manhã.",
+        "Preço médio em consolidação: adição de 2 contratos contra o movimento gerou loss dobrado no Trade 2 (-150 pts = -R$ 120,00).",
+        "Não realização do empate: após reverter o prejuízo às 15h01, permaneceu exposto ao mercado em horário de baixa liquidez, devolvendo R$ 60,94 em dois stops."
+      ],
+      diretriz: "Travar a mão base estritamente em 2 contratos. Operações limitadas impreterivelmente às 12h00. Quando a conta recuperar o saldo para o zero no meio do dia, encerrar a plataforma imediatamente."
+    }
+  },
+  {
+    id: "pregao-2026-11-13",
+    data: "2026-11-13",
+    contratos: 2,
+    tradesVencedores: 5,
+    tradesPerdedores: 1,
+    tradesTotal: 6,
+    pontos: 822.5,
+    resultadoBruto: 329.00,
+    taxas: 8.82,
+    resultadoLiquido: 320.18,
+    saldoApuradoDia: 320.18,
+    horarioInicio: "09:05",
+    horarioFim: "10:12",
+    setup: "VWAP e Volume Profile (POC/VAH/VAL)",
+    assimetriaLote: false,
+    consolidado: true,
+    analiseEstrategica: "Execução perfeita na janela matinal (1h07 de tela). 100% na mão base de 2 contratos. Payoff de 3.49x. Único stop às 10:00 (abertura à vista) foi curto (-45 pts) e encerrado prontamente. Entrada seguinte limpa (+250 pts) e encerramento imediato do dia.",
+    parecerCoach: {
+      veredito: "EXECUÇÃO DE PADRÃO INSTITUCIONAL",
+      sintese: "Sessão exemplar em conformidade com os requisitos da mesa. Simetria total de contratos, janela focada de 1h07 e excelente relação risco-retorno.",
+      acertos: [
+        "Disciplina rígida de lote: 100% das ordens executadas com a mão base de 2 contratos.",
+        "Gestão impecável de risco: ganho médio de +173,5 pts contra perda média de -45,0 pts (Payoff 3,49x).",
+        "Aceitação imediata do stop às 10h00 e encerramento da plataforma logo após bater a meta com a operação de +250 pts."
+      ],
+      erros: [
+        "Ponto de atenção preventiva: o trade das 10h00 coincidiu com a abertura do mercado à vista (leilão das ações), momento de spread alargado. Recomenda-se aguardar de 2 a 3 minutos para estabilização do book."
+      ],
+      diretriz: "Repetir essa rotina sem alterações. Não alongar horário nem aumentar lote nos pregões seguintes."
+    }
+  }
+];
+
 /**
- * Carrega os dados do LocalStorage
+ * Carrega os dados do LocalStorage e garante integridade do histórico auditado
  */
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -196,6 +264,23 @@ function loadData() {
         if (!Array.isArray(appData.diasSemOperacao)) {
           appData.diasSemOperacao = [];
         }
+
+        // Garante que os pregões auditados oficiais estejam presentes (recuperação automática de histórico)
+        const datasPresentes = new Set(appData.pregoes.map(p => p.data));
+        for (const aud of AUDITED_INITIAL_PREGOES) {
+          if (!datasPresentes.has(aud.data)) {
+            appData.pregoes.push(aud);
+          }
+        }
+
+        // Garante marcação de pregões consolidados
+        appData.pregoes.forEach(p => {
+          p.consolidado = p.consolidado || isPregaoConsolidado(p.data);
+        });
+
+        // Ordena cronologicamente
+        appData.pregoes.sort((a, b) => a.data.localeCompare(b.data));
+        saveData();
         return;
       }
     } catch (e) {
@@ -203,8 +288,10 @@ function loadData() {
     }
   }
 
-  appData.pregoes = [];
+  // Inicialização padrão com histórico oficial
+  appData.pregoes = JSON.parse(JSON.stringify(AUDITED_INITIAL_PREGOES));
   appData.diasSemOperacao = [];
+  saveData();
 }
 
 function saveData() {
@@ -444,11 +531,17 @@ function renderChart(m) {
   const pisoAlvo = m.config.PISO_DRAWDOWN;
 
   for (let i = 1; i <= maxDays; i++) {
-    labels.push(`Pregão ${i}`);
+    const diaReal = m.historico[i - 1];
+    let dataFormatada = '—';
+    if (diaReal && diaReal.data) {
+      const [, mes, dia] = diaReal.data.split('-');
+      dataFormatada = `${dia}/${mes}`;
+    }
+    // Rótulo multi-linha no eixo X: Linha 1 = Pregão i, Linha 2 = Data (ex: 12/11)
+    labels.push([`Pregão ${i}`, dataFormatada]);
     targetData.push(metaAlvo);
     floorData.push(pisoAlvo);
 
-    const diaReal = m.historico[i - 1];
     if (diaReal) {
       barData.push(diaReal.resultadoLiquido);
       barColors.push(diaReal.resultadoLiquido >= 0 ? '#10B981' : '#EF4444');
@@ -553,6 +646,14 @@ function renderChart(m) {
           padding: 12,
           boxPadding: 6,
           callbacks: {
+            title: function(items) {
+              if (!items.length) return '';
+              const raw = items[0].label;
+              if (Array.isArray(raw)) {
+                return `${raw[0]} (${raw[1]})`;
+              }
+              return raw;
+            },
             label: function(context) {
               if (context.raw === null || context.raw === undefined) return '';
               const val = Number(context.raw);
@@ -564,7 +665,12 @@ function renderChart(m) {
       scales: {
         x: {
           grid: { color: 'rgba(51, 65, 85, 0.3)' },
-          ticks: { color: '#94A3B8', font: { family: 'Inter', size: 12 } }
+          ticks: {
+            color: '#94A3B8',
+            font: { family: 'Inter', size: 11 },
+            maxRotation: 0,
+            autoSkip: false
+          }
         },
         y: {
           min: yMin,
@@ -597,16 +703,23 @@ function renderHistoryTable(m) {
     const isGain = dia.resultadoLiquido >= 0;
     const badgeColor = isGain ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800' : 'text-red-400 bg-red-950/40 border-red-800';
     const sign = isGain ? '+' : '';
+    const isConsolidado = dia.consolidado || isPregaoConsolidado(dia.data);
 
     return `
       <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition-colors">
         <td class="py-3 px-4">
           <button onclick="window.openCoachModal('${dia.id}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 border border-slate-700 transition-colors shadow-sm" title="Abrir Parecer Operacional do Coach">
-            <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <i data-lucide="${isConsolidado ? 'shield-check' : 'shield'}" class="w-3.5 h-3.5 ${isConsolidado ? 'text-emerald-400' : 'text-sky-400'}"></i>
             <span>#${dia.pregaoNumero}</span>
+            ${isConsolidado ? '<i data-lucide="lock" class="w-3 h-3 text-emerald-400/80 ml-0.5" title="Consolidado pós-B3 (Imutável)"></i>' : ''}
           </button>
         </td>
-        <td class="py-3 px-4 text-xs font-mono text-slate-300">${formatDateBR(dia.data)}</td>
+        <td class="py-3 px-4 text-xs font-mono text-slate-300">
+          <div class="flex items-center gap-1.5">
+            <span>${formatDateBR(dia.data)}</span>
+            ${isConsolidado ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">Fechado</span>' : ''}
+          </div>
+        </td>
         <td class="py-3 px-4 text-xs font-mono text-slate-400">${dia.tradesVencedores}W / ${dia.tradesPerdedores}L</td>
         <td class="py-3 px-4 text-xs font-mono text-slate-300">${dia.contratos} cts</td>
         <td class="py-3 px-4 text-xs font-mono text-slate-300">${dia.pontos > 0 ? '+' : ''}${dia.pontos} pts</td>
@@ -625,12 +738,18 @@ function renderHistoryTable(m) {
             <button onclick="window.openCoachModal('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-sky-400 hover:text-sky-300" title="Parecer do Coach">
               <i data-lucide="file-text" class="w-4 h-4"></i>
             </button>
-            <button onclick="window.editPregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-sky-300" title="Editar">
-              <i data-lucide="edit-2" class="w-4 h-4"></i>
-            </button>
-            <button onclick="window.deletePregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-red-400" title="Excluir">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
+            ${isConsolidado ? `
+              <span class="p-1.5 text-slate-600 cursor-not-allowed" title="Pregão consolidado pós-B3 (Bloqueado para alteração)">
+                <i data-lucide="lock" class="w-4 h-4 text-slate-500"></i>
+              </span>
+            ` : `
+              <button onclick="window.editPregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-sky-300" title="Editar">
+                <i data-lucide="edit-2" class="w-4 h-4"></i>
+              </button>
+              <button onclick="window.deletePregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-red-400" title="Excluir">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            `}
           </div>
         </td>
       </tr>
@@ -728,6 +847,11 @@ function handleFormSubmit() {
 
   const existingIndex = appData.pregoes.findIndex(p => p.data === data && p.id !== editingPregaoId);
   if (existingIndex !== -1) {
+    const existingPregao = appData.pregoes[existingIndex];
+    if (existingPregao && (existingPregao.consolidado || isPregaoConsolidado(existingPregao.data))) {
+      alert(`O pregão de ${formatDateBR(data)} já foi encerrado e consolidado após o fechamento da B3. Registros consolidados são imutáveis.`);
+      return;
+    }
     if (!confirm(`Já existe um pregão registrado na data ${formatDateBR(data)}. Deseja sobrescrever os dados desse dia?`)) {
       return;
     }
@@ -771,7 +895,8 @@ function handleFormSubmit() {
     printFile,
     assimetriaLote: hasAssimetria,
     analiseEstrategica: analise,
-    parecerCoach: parecerGerado
+    parecerCoach: parecerGerado,
+    consolidado: isPregaoConsolidado(data)
   };
 
   if (editingPregaoId) {
@@ -977,6 +1102,11 @@ window.editPregao = function(id) {
   const dia = appData.pregoes.find(p => p.id === id);
   if (!dia) return;
 
+  if (dia.consolidado || isPregaoConsolidado(dia.data)) {
+    alert(`O pregão de ${formatDateBR(dia.data)} já foi encerrado e consolidado após o fechamento da B3. Registros consolidados são imutáveis.`);
+    return;
+  }
+
   editingPregaoId = id;
   document.getElementById('inputData').value = dia.data;
   document.getElementById('inputContratos').value = dia.contratos || 2;
@@ -1012,6 +1142,11 @@ window.cancelEdit = function() {
 window.deletePregao = function(id) {
   const dia = appData.pregoes.find(p => p.id === id);
   if (!dia) return;
+
+  if (dia.consolidado || isPregaoConsolidado(dia.data)) {
+    alert(`O pregão de ${formatDateBR(dia.data)} já foi encerrado e consolidado após o fechamento da B3. Não é permitida a exclusão de pregões oficiais.`);
+    return;
+  }
 
   if (confirm(`Confirma a exclusão do pregão de ${formatDateBR(dia.data)}?`)) {
     appData.pregoes = appData.pregoes.filter(p => p.id !== id);
@@ -1244,43 +1379,84 @@ window.processarTextoCsv = function() {
 window.confirmarImportacaoCsv = function() {
   if (!stagedImportResult || !stagedImportResult.pregoes) return;
 
-  // Mapa de pareceres e IDs existentes para preservar
-  const existentesMap = {};
+  // Mapa com todos os pregões existentes (preservação cumulativa estrita)
+  const mapaPregoes = new Map();
   for (const p of appData.pregoes) {
-    existentesMap[p.data] = p;
+    const isConsolidado = p.consolidado || isPregaoConsolidado(p.data);
+    mapaPregoes.set(p.data, { ...p, consolidado: isConsolidado });
   }
 
-  // Mescla os novos pregões preservando IDs e parecerCoach se já existiam
-  const novosPregoes = stagedImportResult.pregoes.map((imp) => {
-    const antigo = existentesMap[imp.data];
-    return {
-      id: antigo?.id || `pregao-${imp.data}`,
-      data: imp.data,
-      contratos: imp.contratos,
-      tradesVencedores: imp.tradesVencedores,
-      tradesPerdedores: imp.tradesPerdedores,
-      pontos: imp.pontos,
-      resultadoBruto: imp.resultadoBruto,
-      taxas: imp.taxas,
-      resultadoLiquido: imp.resultadoLiquido,
-      parecerCoach: antigo?.parecerCoach || null
-    };
-  });
+  let novosAdicionados = 0;
+  let consolidadosBloqueados = 0;
+  let abertosAtualizados = 0;
 
-  // Atualiza pregoes e ordena por data
-  appData.pregoes = novosPregoes.sort((a, b) => a.data.localeCompare(b.data));
+  for (const imp of stagedImportResult.pregoes) {
+    const existente = mapaPregoes.get(imp.data);
+    const deveConsolidar = isPregaoConsolidado(imp.data);
 
-  // Mescla diasSemOperacao sem duplicação
+    if (existente) {
+      if (existente.consolidado) {
+        // PREGÃO JÁ CONSOLIDADO PÓS-B3: Imutável, bloqueado para sobreescrita
+        consolidadosBloqueados++;
+      } else {
+        // Atualiza pregão ainda aberto no dia corrente
+        mapaPregoes.set(imp.data, {
+          ...existente,
+          contratos: imp.contratos,
+          tradesVencedores: imp.tradesVencedores,
+          tradesPerdedores: imp.tradesPerdedores,
+          pontos: imp.pontos,
+          resultadoBruto: imp.resultadoBruto,
+          taxas: imp.taxas,
+          resultadoLiquido: imp.resultadoLiquido,
+          consolidado: deveConsolidar
+        });
+        abertosAtualizados++;
+      }
+    } else {
+      // Novo pregão inserido de forma cumulativa (nunca apaga o histórico prévio)
+      mapaPregoes.set(imp.data, {
+        id: `pregao-${imp.data}`,
+        data: imp.data,
+        contratos: imp.contratos,
+        tradesVencedores: imp.tradesVencedores,
+        tradesPerdedores: imp.tradesPerdedores,
+        pontos: imp.pontos,
+        resultadoBruto: imp.resultadoBruto,
+        taxas: imp.taxas,
+        resultadoLiquido: imp.resultadoLiquido,
+        parecerCoach: null,
+        consolidado: deveConsolidar
+      });
+      novosAdicionados++;
+    }
+  }
+
+  // Ordena cronologicamente e renumera pregão 1, 2, 3...
+  const ordenados = Array.from(mapaPregoes.values()).sort((a, b) => a.data.localeCompare(b.data));
+  appData.pregoes = ordenados.map((p, idx) => ({
+    ...p,
+    pregaoNumero: idx + 1
+  }));
+
+  // Mescla diasSemOperacao sem duplicação e sem conflitar com dias operados
   const setSemOp = new Set(appData.diasSemOperacao || []);
   if (Array.isArray(stagedImportResult.diasSemOperacao)) {
     for (const d of stagedImportResult.diasSemOperacao) {
-      setSemOp.add(d);
+      if (!mapaPregoes.has(d)) {
+        setSemOp.add(d);
+      }
     }
   }
-  appData.diasSemOperacao = Array.from(setSemOp).sort();
+  appData.diasSemOperacao = Array.from(setSemOp).filter(d => !mapaPregoes.has(d)).sort();
 
   saveData();
   renderApp();
   window.closeModalImportCsv();
-  alert(`Relatório processado com sucesso! ${appData.pregoes.length} pregões atualizados.`);
+
+  let msg = `Importação concluída com sucesso! Total no histórico: ${appData.pregoes.length} pregões.`;
+  if (novosAdicionados > 0) msg += `\n• ${novosAdicionados} novo(s) pregão(ões) adicionado(s).`;
+  if (abertosAtualizados > 0) msg += `\n• ${abertosAtualizados} pregão(ões) em aberto atualizado(s).`;
+  if (consolidadosBloqueados > 0) msg += `\n• ${consolidadosBloqueados} pregão(ões) consolidado(s) pós-B3 mantido(s) inalterado(s).`;
+  alert(msg);
 };

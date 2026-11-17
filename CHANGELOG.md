@@ -2,6 +2,17 @@
 
 ---
 
+## v1.8 — 2026-11-17 (Sessão: Rótulos com Datas no Eixo X, Importação Cumulativa e Trava de Imutabilidade Pós-B3)
+
+### 🚀 Gráfico, Integridade de Histórico & Imutabilidade (`web/calculations.js`, `web/app.js`, `web/test_calculations.js`)
+- **Datas dos Pregões no Eixo X do Gráfico:** O eixo horizontal do gráfico de evolução agora exibe rótulos multi-linha com o número do pregão e a data correspondente logo abaixo (`Pregão 1 / 12/11`, `Pregão 2 / 13/11`, etc.), mantendo `—` para pregões futuros.
+- **Importação CSV Estritamente Cumulativa (Upsert Seguro):** Correção definitiva da importação de relatórios. Subir um arquivo de apenas 1 dia ou período parcial agora realiza um merge incremental, preservando todos os pregões já existentes no banco local sem risco de perda ou apagamento acidental.
+- **Trava de Imutabilidade Pós-Fechamento da B3 (`isPregaoConsolidado`):** Qualquer pregão com data anterior ou registrado após o fechamento da B3 (18:00) torna-se oficialmente consolidado e imutável (`consolidado: true`), bloqueando exclusões, edições ou sobrescritas por novos arquivos.
+- **Identificação Visual na Tabela:** Pregões consolidados exibem ícone de cadeado (`🔒 Consolidado / Fechado`) e têm os botões de exclusão e edição desativados por segurança.
+- **Recuperação Automática do Histórico Oficial:** Inicialização e carregamento resilientes que garantem a presença perene dos pregões auditados (#1 em 12/11 e #2 em 13/11).
+
+---
+
 ## v1.7 — 2026-11-14 (Sessão: Painel Superior de Gestão Estratégica de Risco e Régua de Volatilidade)
 
 ### 🚀 Gestão de Risco por Trade & Régua de Volatilidade (`web/calculations.js`, `web/index.html`, `web/app.js`)

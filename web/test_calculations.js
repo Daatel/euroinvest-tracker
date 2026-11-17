@@ -1,4 +1,4 @@
-import { calculateMetrics, checkAssimetriaLote, formatCurrency, parseProfitCSV, calculateRiskTiers } from './calculations.js';
+import { calculateMetrics, checkAssimetriaLote, formatCurrency, parseProfitCSV, calculateRiskTiers, isPregaoConsolidado } from './calculations.js';
 import fs from 'fs';
 
 console.log("=== TESTE 1: DADOS REAIS AUDITADOS (DIAS 1 E 2) ===");
@@ -107,5 +107,12 @@ console.log("Risco Financeiro:", risk.riscoFinanceiro, "(Esperado: 141.75)");
 console.log("Pontos Globais:", risk.pontosGlobais, "(Esperado: 709)");
 console.log("Stop 2 cts:", risk.tiers[0].pontos, "pts - Seguro?", risk.tiers[0].isSeguro, "(Esperado: >= 354 e true)");
 console.log("Stop 4 cts:", risk.tiers[2].pontos, "pts - Seguro?", risk.tiers[2].isSeguro, "(Esperado: 177 e false - fragil)");
+
+console.log("\n=== TESTE 9: TRAVA DE IMUTABILIDADE / CONSOLIDAÇÃO B3 ===");
+const dataRef1 = new Date('2026-11-17T14:30:00'); // hoje durante o pregão
+const dataRef2 = new Date('2026-11-17T18:15:00'); // hoje após fechamento da B3
+console.log("Dia 12/11 visto em 17/11:", isPregaoConsolidado("2026-11-12", dataRef1), "(Esperado: true)");
+console.log("Dia 17/11 às 14h30:", isPregaoConsolidado("2026-11-17", dataRef1), "(Esperado: false)");
+console.log("Dia 17/11 às 18h15:", isPregaoConsolidado("2026-11-17", dataRef2), "(Esperado: true)");
 
 console.log("\n>>> TODOS OS TESTES PASSARAM COM SUCESSO! <<<");

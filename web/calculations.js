@@ -30,6 +30,26 @@ export function fromCents(cents) {
 }
 
 /**
+ * Verifica se um pregão está consolidado (fechamento oficial da B3)
+ * Um pregão é consolidado se for de data anterior à data de referência (hoje),
+ * ou se for do dia de hoje após o encerramento oficial da B3 (18:00).
+ * @param {string} dataIso Data no formato YYYY-MM-DD
+ * @param {Date} dataReferencia Objeto Date de referência (padrão: agora)
+ * @returns {boolean}
+ */
+export function isPregaoConsolidado(dataIso, dataReferencia = new Date()) {
+  if (!dataIso) return false;
+  const anoRef = dataReferencia.getFullYear();
+  const mesRef = String(dataReferencia.getMonth() + 1).padStart(2, '0');
+  const diaRef = String(dataReferencia.getDate()).padStart(2, '0');
+  const hojeStr = `${anoRef}-${mesRef}-${diaRef}`;
+
+  if (dataIso < hojeStr) return true;
+  if (dataIso === hojeStr && dataReferencia.getHours() >= 18) return true;
+  return false;
+}
+
+/**
  * Formata valor em moeda brasileira (BRL)
  */
 export function formatCurrency(value, showSign = false) {
