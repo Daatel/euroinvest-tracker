@@ -76,6 +76,60 @@
         ],
         "diretriz": "Repetir essa rotina sem alterações. Não alongar horário nem aumentar lote nos pregões seguintes."
       }
+    },
+    {
+      "id": "pregao-2026-11-16",
+      "data": "2026-11-16",
+      "contratos": 2,
+      "tradesVencedores": 1,
+      "tradesPerdedores": 1,
+      "tradesTotal": 2,
+      "pontos": -0.1,
+      "resultadoBruto": -0.05,
+      "taxas": 83.89,
+      "resultadoLiquido": -83.94,
+      "saldoApuradoDia": -83.94,
+      "horarioInicio": "09:15",
+      "horarioFim": "11:30",
+      "setup": "VWAP e Volume Profile",
+      "assimetriaLote": false,
+      "consolidado": true
+    },
+    {
+      "id": "pregao-2026-11-17",
+      "data": "2026-11-17",
+      "contratos": 10,
+      "tradesVencedores": 7,
+      "tradesPerdedores": 3,
+      "tradesTotal": 10,
+      "pontos": 8.3,
+      "resultadoBruto": 8.16,
+      "taxas": 106.46,
+      "resultadoLiquido": 251.33,
+      "saldoApuradoDia": 251.33,
+      "horarioInicio": "09:05",
+      "horarioFim": "11:30",
+      "setup": "VWAP e Volume Profile",
+      "assimetriaLote": false,
+      "consolidado": true
+    },
+    {
+      "id": "pregao-2026-11-18",
+      "data": "2026-11-18",
+      "contratos": 6,
+      "tradesVencedores": 11,
+      "tradesPerdedores": 4,
+      "tradesTotal": 15,
+      "pontos": 945.0,
+      "resultadoBruto": 325.40,
+      "taxas": 32.49,
+      "resultadoLiquido": 292.91,
+      "saldoApuradoDia": 292.91,
+      "horarioInicio": "09:06",
+      "horarioFim": "10:30",
+      "setup": "VWAP e Volume Profile (Rocket Trader)",
+      "assimetriaLote": false,
+      "consolidado": false
     }
   ]
 }
