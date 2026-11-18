@@ -270,6 +270,9 @@ function loadData() {
           appData.planoTrade = { ...PLANO_DE_TRADE_PADRAO };
         }
 
+        // Remove registros corrompidos ou com data inválida
+        appData.pregoes = appData.pregoes.filter(p => p && p.data && !p.data.includes('undefined') && p.data.length >= 8);
+
         // Garante que os pregões auditados oficiais estejam presentes (recuperação automática de histórico)
         const datasPresentes = new Set(appData.pregoes.map(p => p.data));
         for (const aud of AUDITED_INITIAL_PREGOES) {
@@ -278,9 +281,14 @@ function loadData() {
           }
         }
 
-        // Garante marcação de pregões consolidados
+        // Garante marcação correta de consolidação (pregão de hoje antes das 18h nunca é travado)
+        const hojeStr = new Date().toISOString().split('T')[0];
         appData.pregoes.forEach(p => {
-          p.consolidado = p.consolidado || isPregaoConsolidado(p.data);
+          if (p.data === hojeStr) {
+            p.consolidado = isPregaoConsolidado(p.data);
+          } else {
+            p.consolidado = p.consolidado || isPregaoConsolidado(p.data);
+          }
         });
 
         // Ordena cronologicamente
@@ -1429,7 +1437,7 @@ window.processarTextoCsv = function() {
     previewArea.classList.remove('hidden');
     previewArea.className = 'p-3.5 rounded-xl bg-red-950/40 border border-red-800 text-xs font-mono text-red-300';
     previewTitle.textContent = "Erro na leitura do CSV";
-    previewDetails.textContent = "Não foi possível identificar colunas válidas de data e P&L. Verifique se o arquivo é a exportação de Operações do Profit.";
+    previewDetails.textContent = "Não foi possível identificar colunas válidas de data e P&L. Verifique se o relatório contém as operações do dia.";
     btnConfirm.disabled = true;
     stagedImportResult = null;
     return;
@@ -1437,18 +1445,28 @@ window.processarTextoCsv = function() {
 
   stagedImportResult = result;
   previewArea.classList.remove('hidden');
-  previewArea.className = 'p-3.5 rounded-xl bg-sky-950/40 border border-sky-800 text-xs font-mono text-slate-200';
+  previewArea.className = 'p-3.5 rounded-xl bg-sky-950/40 border border-sky-800 text-xs font-mono text-slate-200 space-y-2';
   
   const totalTrades = result.totalTrades || 0;
-  previewTitle.textContent = `✓ ${result.pregoes.length} pregão(ões) com trades identificados (${totalTrades} operações).`;
+  previewTitle.textContent = `✓ ${result.pregoes.length} pregão(ões) com trades identificados (${totalTrades} operações no total).`;
+
+  const listaPregoesHtml = result.pregoes.map(p => {
+    const sinal = p.resultadoLiquido >= 0 ? '+' : '';
+    const badgeCor = p.resultadoLiquido >= 0 ? 'text-emerald-400' : 'text-red-400';
+    return `<div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between items-center text-xs">
+      <span><strong>${formatDateBR(p.data)}</strong> (${p.tradesVencedores}W / ${p.tradesPerdedores}L — máx ${p.contratos} cts)</span>
+      <span class="font-bold ${badgeCor}">${sinal}${formatCurrency(p.resultadoLiquido)} (${p.pontos > 0 ? '+' : ''}${p.pontos} pts)</span>
+    </div>`;
+  }).join('');
 
   const semOpMsg = result.diasSemOperacao && result.diasSemOperacao.length > 0
     ? `• ${result.diasSemOperacao.length} pregão(ões) sem operação identificados no intervalo (${result.diasSemOperacao.join(', ')}).`
     : '• Nenhum gap de dia útil no período.';
 
   previewDetails.innerHTML = `
-    <div>${semOpMsg}</div>
-    <div class="mt-1 text-slate-400">Clique em "Salvar no Terminal" para aplicar ao seu histórico oficial.</div>
+    <div class="space-y-1 my-1.5">${listaPregoesHtml}</div>
+    <div class="text-[11px] text-slate-400">${semOpMsg}</div>
+    <div class="mt-1 text-sky-300 font-semibold">Clique no botão "Salvar no Terminal" abaixo para aplicar ao seu histórico.</div>
   `;
 
   btnConfirm.disabled = false;
@@ -1457,10 +1475,13 @@ window.processarTextoCsv = function() {
 window.confirmarImportacaoCsv = function() {
   if (!stagedImportResult || !stagedImportResult.pregoes) return;
 
+  const hojeStr = new Date().toISOString().split('T')[0];
+
   // Mapa com todos os pregões existentes (preservação cumulativa estrita)
   const mapaPregoes = new Map();
   for (const p of appData.pregoes) {
-    const isConsolidado = p.consolidado || isPregaoConsolidado(p.data);
+    const isHoje = p.data === hojeStr;
+    const isConsolidado = !isHoje && (p.consolidado || isPregaoConsolidado(p.data));
     mapaPregoes.set(p.data, { ...p, consolidado: isConsolidado });
   }
 
@@ -1471,13 +1492,17 @@ window.confirmarImportacaoCsv = function() {
   for (const imp of stagedImportResult.pregoes) {
     const existente = mapaPregoes.get(imp.data);
     const deveConsolidar = isPregaoConsolidado(imp.data);
+    const isHoje = imp.data === hojeStr;
+    const isZerado = existente && (Number(existente.resultadoLiquido || 0) === 0 && Number(existente.pontos || 0) === 0);
+
+    // O pregão de hoje antes das 18h nunca é bloqueado; pregão anterior com valor zerado por erro de parser anterior também pode ser retificado
+    const estaBloqueado = existente && existente.consolidado && !isHoje && !isZerado;
 
     if (existente) {
-      if (existente.consolidado) {
-        // PREGÃO JÁ CONSOLIDADO PÓS-B3: Imutável, bloqueado para sobreescrita
+      if (estaBloqueado) {
         consolidadosBloqueados++;
       } else {
-        // Atualiza pregão ainda aberto no dia corrente
+        // Atualiza pregão existente
         mapaPregoes.set(imp.data, {
           ...existente,
           contratos: imp.contratos,
@@ -1492,7 +1517,7 @@ window.confirmarImportacaoCsv = function() {
         abertosAtualizados++;
       }
     } else {
-      // Novo pregão inserido de forma cumulativa (nunca apaga o histórico prévio)
+      // Novo pregão inserido de forma cumulativa
       mapaPregoes.set(imp.data, {
         id: `pregao-${imp.data}`,
         data: imp.data,
@@ -1534,7 +1559,7 @@ window.confirmarImportacaoCsv = function() {
 
   let msg = `Importação concluída com sucesso! Total no histórico: ${appData.pregoes.length} pregões.`;
   if (novosAdicionados > 0) msg += `\n• ${novosAdicionados} novo(s) pregão(ões) adicionado(s).`;
-  if (abertosAtualizados > 0) msg += `\n• ${abertosAtualizados} pregão(ões) em aberto atualizado(s).`;
+  if (abertosAtualizados > 0) msg += `\n• ${abertosAtualizados} pregão(ões) atualizado(s).`;
   if (consolidadosBloqueados > 0) msg += `\n• ${consolidadosBloqueados} pregão(ões) consolidado(s) pós-B3 mantido(s) inalterado(s).`;
   alert(msg);
 };

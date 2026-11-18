@@ -10,6 +10,8 @@
 - **Resolução de Datas Abreviadas:** Normalização automática de datas sem ano (ex: `"18/11 10:30:07"`), completando para o ano corrente e aceitando formatos `DD/MM/AAAA`, `DD/MM/AA`, `AAAA-MM-DD` e `DD-MM-AAAA`.
 - **Inferência Resiliente de Status e Pontuação:** Caso o relatório não possua coluna explícita de status ou pontos, o motor calcula os pontos automaticamente pela variação de preço de entrada/saída (`Preço C` e `Preço V`) e infere o status pelo resultado financeiro.
 - **Parser Financeiro Híbrido:** Extração de valores em reais (`R$`), percentuais, decimais com ponto ou vírgula, e notações compostas com pipe (`|`).
+- **Destravamento do Pregão Corrente & Retificação de Zeros:** O pregão do dia de hoje (antes das 18h) nunca é bloqueado por travas de consolidação, permitindo subir novos relatórios ao longo do dia para atualizar os dados. Registros com valores zerados por erro prévio são automaticamente liberados para retificação.
+- **Visualização Detalhada na Pré-visualização do CSV:** A pré-visualização do modal agora lista nominalmente cada pregão identificado com suas operações, pontos e resultado financeiro em verde/vermelho.
 - **12 Testes Unitários 100% Aprovados:** Cobertura de relatórios legados e modernos.
 
 ---

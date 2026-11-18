@@ -565,7 +565,7 @@
       <!-- Ou Colar Conteúdo -->
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1.5">Ou cole o texto do relatório CSV:</label>
-        <textarea id="textareaCsvContent" rows="6" placeholder="Ativo;Status;Abertura;Fechamento;Duração;Qtd Compra;Qtd Venda;Preço de Compra..." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none focus:border-sky-500"></textarea>
+        <textarea id="textareaCsvContent" oninput="window.processarTextoCsv()" rows="6" placeholder="Ativo;Status;Abertura;Fechamento;Duração;Qtd Compra;Qtd Venda;Preço de Compra..." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none focus:border-sky-500"></textarea>
       </div>
 
       <!-- Pré-visualização do resultado do parser -->
