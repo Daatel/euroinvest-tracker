@@ -1,4 +1,4 @@
-import { calculateMetrics, checkAssimetriaLote, formatCurrency, parseProfitCSV, calculateRiskTiers, isPregaoConsolidado } from './calculations.js';
+import { calculateMetrics, checkAssimetriaLote, formatCurrency, parseProfitCSV, calculateRiskTiers, isPregaoConsolidado, PLANO_DE_TRADE_PADRAO, gerarPromptAuditoriaMD, parseRetornoAuditoriaIA } from './calculations.js';
 import fs from 'fs';
 
 console.log("=== TESTE 1: DADOS REAIS AUDITADOS (DIAS 1 E 2) ===");
@@ -114,5 +114,53 @@ const dataRef2 = new Date('2026-11-17T18:15:00'); // hoje após fechamento da B3
 console.log("Dia 12/11 visto em 17/11:", isPregaoConsolidado("2026-11-12", dataRef1), "(Esperado: true)");
 console.log("Dia 17/11 às 14h30:", isPregaoConsolidado("2026-11-17", dataRef1), "(Esperado: false)");
 console.log("Dia 17/11 às 18h15:", isPregaoConsolidado("2026-11-17", dataRef2), "(Esperado: true)");
+
+console.log("\n=== TESTE 10: GERADOR DE MARKDOWN DE AUDITORIA ===");
+const pregaoTesteMD = {
+  data: "2026-11-13",
+  contratos: 2,
+  tradesVencedores: 5,
+  tradesPerdedores: 1,
+  pontos: 822.5,
+  resultadoBruto: 329.0,
+  taxas: 8.82,
+  resultadoLiquido: 320.18,
+  horarioInicio: "09:05",
+  horarioFim: "10:12",
+  analiseEstrategica: "Execução perfeita na VWAP."
+};
+const mdOutput = gerarPromptAuditoriaMD(pregaoTesteMD);
+console.log("MD gerado contém Plano de Trade?", mdOutput.includes("PLANO DE TRADE OFICIAL"), "(Esperado: true)");
+console.log("MD gerado contém R$ 320,18?", mdOutput.includes("320,18"), "(Esperado: true)");
+
+console.log("\n=== TESTE 11: PARSER DE RETORNO DA IA E SCORE COMPORTAMENTAL ===");
+const respostaExemploIA = `
+### SCORE COMPORTAMENTAL: 9.5/10
+
+### VEREDITO EXECUTIVO:
+EXECUÇÃO IMPECÁVEL DE PADRÃO INSTITUCIONAL
+
+### SÍNTESE DA SESSÃO:
+O trader operou estritamente dentro da janela matinal, respeitou a mão base de 2 contratos e aceitou o único stop do dia com disciplina exemplar.
+
+### ACERTOS TÉCNICOS & DISCIPLINA:
+- 100% de obediência à janela das 09h05 às 10h12.
+- Stop técnico curto prontamente aceito às 10h00.
+
+### VULNERABILIDADES & DESVIOS:
+- Pequena hesitação no leilão de ações.
+
+### DIRETRIZ PARA O PRÓXIMO PREGÃO:
+Repetir exatamente a rotina sem aumentar a mão.
+`;
+
+const parsedIA = parseRetornoAuditoriaIA(respostaExemploIA);
+console.log("Score extraído:", parsedIA.score, "(Esperado: 9.5)");
+console.log("Veredito extraído:", parsedIA.veredito, "(Esperado: EXECUÇÃO IMPECÁVEL DE PADRÃO INSTITUCIONAL)");
+console.log("Qtd Acertos:", parsedIA.acertos.length, "(Esperado: 2)");
+
+pregaoTesteMD.scoreComportamental = parsedIA.score;
+const mComScore = calculateMetrics([pregaoTesteMD]);
+console.log("Média de Score:", mComScore.mediaScoreComportamental, "(Esperado: 9.5)");
 
 console.log("\n>>> TODOS OS TESTES PASSARAM COM SUCESSO! <<<");

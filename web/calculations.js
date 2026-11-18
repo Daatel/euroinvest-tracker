@@ -240,6 +240,14 @@ export function calculateMetrics(pregoes = [], customConfig = {}, diasSemOperaca
   const totalTrades = totalTradesGanhos + totalTradesPerdidos;
   const taxaAcertoTrades = totalTrades > 0 ? Number(((totalTradesGanhos / totalTrades) * 100).toFixed(1)) : 0;
 
+  // Média de Disciplina / Score Comportamental (0 a 10)
+  const scoresValidos = pregoes
+    .map(p => Number(p.scoreComportamental))
+    .filter(s => !isNaN(s) && s > 0);
+  const mediaScoreComportamental = scoresValidos.length > 0
+    ? Number((scoresValidos.reduce((acc, val) => acc + val, 0) / scoresValidos.length).toFixed(1))
+    : null;
+
   return {
     config: cfg,
     totalPregoes: total,
@@ -273,6 +281,8 @@ export function calculateMetrics(pregoes = [], customConfig = {}, diasSemOperaca
     totalTaxas: fromCents(totalTaxasCents),
     totalDiasSemOperacao,
     diasSemOperacao: diasSemOpList,
+    mediaScoreComportamental,
+    totalScoresAvaliados: scoresValidos.length,
     historico: historicoComProgressao
   };
 }
@@ -448,4 +458,164 @@ export function calculateRiskTiers(capitalPerda = 2835, riscoPercentual = 5, val
     pontosGlobais,
     tiers
   };
+}
+
+/**
+ * Plano de Trade Padrão Oficial do Trader na Mesa Euroinvest
+ */
+export const PLANO_DE_TRADE_PADRAO = {
+  setup: "Price Action ancorado em VWAP e Volume Profile (POC, VAH, VAL, nós HVN/LVN)",
+  janelaOperacional: "09h15 às 12h00 (aguardar 2 a 3 min no leilão das 10h00; proibido operar após as 12h00)",
+  alvoPadraoPontos: 200,
+  stopMinimoPontos: 200,
+  maoBaseContratos: 2,
+  maoMaximaContratos: 3,
+  disjuntorGainDia: "R$ 150 a R$ 350 (desligar tela para proteger dia positivo)",
+  disjuntorLossDia: "R$ 150 a R$ 240 (desligar tela para proteger o drawdown)",
+  regrasBloqueio: [
+    "Proibido preço médio contra rompimento de estrutura com volume",
+    "Proibido operar após as 12h00 (mercado vespertino de baixo volume)",
+    "Proibido scalping curto menor que 20 pontos (infração B3/Euroinvest)",
+    "Proibido reentrada imediata no mesmo minuto de um stop técnico"
+  ]
+};
+
+/**
+ * Gera o documento Markdown estruturado de auditoria do pregão para ser submetido à IA
+ * @param {Object} pregao Dados do pregão auditado
+ * @param {Object} plano Parâmetros do Plano de Trade
+ * @returns {string} Conteúdo em Markdown pronto para download/cópia
+ */
+export function gerarPromptAuditoriaMD(pregao, plano = PLANO_DE_TRADE_PADRAO) {
+  if (!pregao) return "";
+
+  const dataFormatada = pregao.data ? pregao.data.split('-').reverse().join('/') : "";
+  const liquidoFmt = formatCurrency(pregao.resultadoLiquido, true);
+  const brutoFmt = formatCurrency(pregao.resultadoBruto, true);
+  const taxasFmt = formatCurrency(pregao.taxas);
+  const totalTrades = (pregao.tradesVencedores || 0) + (pregao.tradesPerdedores || 0);
+
+  return `# 🛡️ DOSSIÊ DE AUDITORIA OPERACIONAL — PREGÃO DE ${dataFormatada}
+**Ativo:** Mini Índice B3 (WIN) | **Trader:** Marcio Leite  
+**Mesa Proprietária:** Euroinvest (Plano Junior - R$ 1.400 Meta / R$ 2.835 Piso)
+
+---
+
+## 📋 1. PLANO DE TRADE OFICIAL (Gabarito de Conformidade)
+* **Setup Autorizado:** ${plano.setup}
+* **Janela Operacional Estrita:** ${plano.janelaOperacional}
+* **Alvo Técnico Padrão:** ${plano.alvoPadraoPontos} pontos por trade
+* **Stop Técnico Mínimo de Volatilidade:** ${plano.stopMinimoPontos} pontos (stops < 200 pts são asfixiados por ruído de HFT)
+* **Dimensionamento:** Mão base de ${plano.maoBaseContratos} contratos (máximo rigoroso de ${plano.maoMaximaContratos} contratos)
+* **Disjuntor de Ganho:** ${plano.disjuntorGainDia}
+* **Disjuntor de Perda:** ${plano.disjuntorLossDia}
+* **Regras de Bloqueio Operacional:**
+${plano.regrasBloqueio.map(r => `  - ${r}`).join('\n')}
+
+---
+
+## 📊 2. DADOS OFICIAIS DO PREGÃO (${dataFormatada})
+* **Resultado Líquido do Dia:** ${liquidoFmt}
+* **Resultado Bruto:** ${brutoFmt} | **Custos/Taxas B3:** ${taxasFmt}
+* **Pontos no WIN:** ${pregao.pontos > 0 ? '+' : ''}${pregao.pontos} pts
+* **Operações:** ${pregao.tradesVencedores} Vencedoras (W) / ${pregao.tradesPerdedores} Perdedoras (L) — Total: ${totalTrades} trades
+* **Mão Utilizada:** ${pregao.contratos} contratos
+* **Horário Operado:** ${pregao.horarioInicio || 'Não especificado'} às ${pregao.horarioFim || 'Não especificado'}
+* **Reflexão / Anotação do Trader:**
+> "${pregao.analiseEstrategica || 'Sem notas adicionais informadas pelo trader.'}"
+
+---
+
+## 🤖 3. INSTRUÇÕES PARA A INTELIGÊNCIA ARTIFICIAL (GESTOR DE RISCO SÊNIOR)
+Você é o **Head Coach e Gestor de Risco Chefe** da mesa proprietária.
+Sua missão é auditar a performance do trader **confrontando o PRINT DO GRÁFICO (anexo) e os dados numéricos contra o PLANO DE TRADE OFICIAL**.
+
+Analise criticamente:
+1. O trader operou dentro da janela permitida (09h15 às 12h00)?
+2. As entradas no print respeitaram os nós de volume e VWAP ou foram impulsivas?
+3. Houve respeito ao stop mínimo de 200 pontos e à mão máxima de 2 a 3 contratos?
+4. O trader desligou a tela ao atingir o disjuntor financeiro ou insistiu e devolveu dinheiro?
+
+Responda OBRIGATORIAMENTE no seguinte formato estruturado (para que o terminal faça o parse exato):
+
+### SCORE COMPORTAMENTAL: [Nota de 0.0 a 10.0]
+*(Critério: 10.0 = obediência cega ao plano e gerenciamento perfeito; < 6.0 = quebra de disciplina grave; 0.0 = dia de fúria/indisciplina)*
+
+### VEREDITO EXECUTIVO:
+[Uma frase curta em caixa alta resumindo o veredito da sessão]
+
+### SÍNTESE DA SESSÃO:
+[Parágrafo objetivo de 3 a 4 linhas correlacionando o resultado financeiro com o comportamento real do trader]
+
+### ACERTOS TÉCNICOS & DISCIPLINA:
+- [Item 1]
+- [Item 2]
+
+### VULNERABILIDADES & DESVIOS:
+- [Item 1]
+- [Item 2]
+
+### DIRETRIZ PARA O PRÓXIMO PREGÃO:
+[Uma ordem técnica clara e direta para a próxima sessão de trading]
+`;
+}
+
+/**
+ * Faz o parse da resposta gerada pela IA, extraindo o Score e o Parecer estruturado
+ * @param {string} texto Mensagem gerada pela IA
+ * @returns {Object} { score, veredito, sintese, acertos, erros, diretriz }
+ */
+export function parseRetornoAuditoriaIA(texto) {
+  if (!texto || typeof texto !== 'string') return null;
+
+  const res = {
+    score: null,
+    veredito: "",
+    sintese: "",
+    acertos: [],
+    erros: [],
+    diretriz: ""
+  };
+
+  // Extrai Score (ex: "SCORE COMPORTAMENTAL: 8.5" ou "Nota: 9/10" ou "8.5/10")
+  const scoreMatch = texto.match(/SCORE(?:\s+COMPORTAMENTAL)?[:\s]*([0-9]+[.,]?[0-9]*)(?:\s*\/\s*10)?/i) ||
+                     texto.match(/NOTA[:\s]*([0-9]+[.,]?[0-9]*)(?:\s*\/\s*10)?/i);
+  if (scoreMatch && scoreMatch[1]) {
+    const num = parseFloat(scoreMatch[1].replace(',', '.'));
+    if (!isNaN(num)) {
+      res.score = Math.min(10, Math.max(0, Number(num.toFixed(1))));
+    }
+  }
+
+  // Extrai Veredito
+  const vereditoMatch = texto.match(/###\s*VEREDITO[^\n]*\n+([^\n#]+)/i);
+  if (vereditoMatch) res.veredito = vereditoMatch[1].trim();
+
+  // Extrai Síntese
+  const sinteseMatch = texto.match(/###\s*SÍNTESE[^\n]*\n+([\s\S]*?)(?=###|$)/i);
+  if (sinteseMatch) res.sintese = sinteseMatch[1].trim();
+
+  // Extrai Acertos
+  const acertosMatch = texto.match(/###\s*ACERTOS[^\n]*\n+([\s\S]*?)(?=###|$)/i);
+  if (acertosMatch) {
+    res.acertos = acertosMatch[1]
+      .split(/\n+/)
+      .map(l => l.replace(/^[-*•\d.]+\s*/, '').trim())
+      .filter(Boolean);
+  }
+
+  // Extrai Vulnerabilidades / Erros
+  const errosMatch = texto.match(/###\s*(?:VULNERABILIDADES|DESVIOS|ERROS)[^\n]*\n+([\s\S]*?)(?=###|$)/i);
+  if (errosMatch) {
+    res.erros = errosMatch[1]
+      .split(/\n+/)
+      .map(l => l.replace(/^[-*•\d.]+\s*/, '').trim())
+      .filter(Boolean);
+  }
+
+  // Extrai Diretriz
+  const diretrizMatch = texto.match(/###\s*DIRETRIZ[^\n]*\n+([\s\S]*?)(?=###|$)/i);
+  if (diretrizMatch) res.diretriz = diretrizMatch[1].trim();
+
+  return res;
 }

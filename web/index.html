@@ -97,6 +97,11 @@
           Carregando...
         </div>
 
+        <button id="btnOpenPlanoTrade" onclick="window.openModalPlanoTrade()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700 transition-colors shadow-sm" title="Visualizar o Plano de Trade Oficial (Gabarito da IA)">
+          <i data-lucide="compass" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Plano de Trade</span>
+        </button>
+
         <button id="btnExportDossier" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-700 transition-colors shadow-sm" title="Gerar relatório consolidado para análise de IA">
           <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span>Dossiê IA</span>
@@ -498,9 +503,10 @@
                   <th class="py-2.5 px-4">Mão</th>
                   <th class="py-2.5 px-4">Pontos</th>
                   <th class="py-2.5 px-4">Bruto</th>
-                  <th class="py-2.5 px-4">Taxas</th>
-                  <th class="py-2.5 px-4">Líquido</th>
-                  <th class="py-2.5 px-4">Acumulado</th>
+                  <th class="py-2.5 px-3">Taxas</th>
+                  <th class="py-2.5 px-3">Líquido</th>
+                  <th class="py-2.5 px-3">Score IA</th>
+                  <th class="py-2.5 px-3">Acumulado</th>
                   <th class="py-2.5 px-4">% Pos</th>
                   <th class="py-2.5 px-4 text-center">Ações</th>
                 </tr>
@@ -668,6 +674,164 @@
             <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar no Terminal
           </button>
           <button onclick="window.closeModalImportCsv()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Plano de Trade Oficial (Gabarito da IA) -->
+  <div id="modalPlanoTrade" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="compass" class="w-5 h-5 text-indigo-400"></i>
+          <h3 class="text-sm font-bold text-white">Plano de Trade Oficial — Gabarito de Conformidade</h3>
+        </div>
+        <button onclick="window.closeModalPlanoTrade()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Este plano define as regras operacionais estritas que balizam a sua disciplina. Ele é embutido automaticamente no Dossiê Markdown (.md) submetido à Inteligência Artificial para auditar suas operações contra violinos, quebra de janela e assimetria de lote.
+      </p>
+
+      <div class="space-y-3 text-xs">
+        <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+          <span class="text-indigo-400 font-mono font-bold text-[11px] uppercase">1. Setup Autorizado</span>
+          <div class="text-slate-200">Price Action ancorado em VWAP e Volume Profile (POC, VAH, VAL, HVN/LVN).</div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+          <span class="text-indigo-400 font-mono font-bold text-[11px] uppercase">2. Janela Operacional Estrita</span>
+          <div class="text-slate-200">09h15 às 12h00 (aguardar de 2 a 3 minutos no leilão das 10h00; proibido operar no turno da tarde).</div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+            <span class="text-indigo-400 font-mono font-bold text-[11px] uppercase">3. Alvo Padrão</span>
+            <div class="text-slate-200 font-mono font-bold text-emerald-400">200 pontos por operação</div>
+            <div class="text-[11px] text-slate-400">Meta diária recomendada: 300 pontos.</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+            <span class="text-indigo-400 font-mono font-bold text-[11px] uppercase">4. Stop Mínimo Técnico</span>
+            <div class="text-slate-200 font-mono font-bold text-amber-400">Mínimo 200 pontos</div>
+            <div class="text-[11px] text-slate-400">Stops &lt; 200 pts são asfixiados por ruído de HFT.</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+            <span class="text-indigo-400 font-mono font-bold text-[11px] uppercase">5. Lote Operacional</span>
+            <div class="text-slate-200 font-mono font-bold text-sky-400">2 contratos (Mão Base)</div>
+            <div class="text-[11px] text-slate-400">Máximo absoluto de 3 contratos sob risco de 5%.</div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+            <span class="text-indigo-400 font-mono font-bold text-[11px] uppercase">6. Disjuntores Diários</span>
+            <div class="text-slate-200 font-mono font-bold text-slate-300">+R$ 150 a +R$ 350 / -R$ 150 a -R$ 240</div>
+            <div class="text-[11px] text-slate-400">Bateu disjuntor? Desligar a tela para proteger consistência.</div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-red-950/20 border border-red-900/40 space-y-1.5">
+          <span class="text-red-400 font-mono font-bold text-[11px] uppercase flex items-center gap-1.5">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Regras de Bloqueio Rígido
+          </span>
+          <ul class="text-[11px] text-red-200/90 list-disc list-inside space-y-1">
+            <li>Proibido preço médio contra rompimento de estrutura com volume.</li>
+            <li>Proibido scalping menor que 20 pontos (infração regulamentar B3/Euroinvest).</li>
+            <li>Proibido operar após as 12h00 ou após reverter prejuízo no meio da sessão.</li>
+            <li>Proibido reentrar no mesmo minuto de um stop técnico.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-2 border-t border-slate-800">
+        <button onclick="window.closeModalPlanoTrade()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Auditoria do Pregão com IA (Download MD & Registro de Score) -->
+  <div id="modalAuditoriaIA" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="w-full max-w-3xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="p-1.5 rounded-lg bg-indigo-950 text-indigo-400 border border-indigo-800">
+            <i data-lucide="bot" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="auditoriaModalTitulo" class="text-sm font-bold text-white">Auditoria do Pregão com IA</h3>
+            <p id="auditoriaModalSubtitulo" class="text-xs text-slate-400">Submeta o dossiê à IA e registre o Score Comportamental</p>
+          </div>
+        </div>
+        <button onclick="window.closeModalAuditoriaIA()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Passo 1: Download e Cópia do Prompt MD -->
+      <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-indigo-900 text-indigo-300 text-[10px] flex items-center justify-center font-mono">1</span>
+            Dossiê Estruturado para a IA (Markdown)
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="btnBaixarMdAuditoria" onclick="window.baixarArquivoAuditoriaMD()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 transition-colors flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar Arquivo .MD
+            </button>
+            <button onclick="window.copiarTextoMdAuditoria()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 transition-colors flex items-center gap-1.5">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Texto
+            </button>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-400 leading-snug">
+          💡 <strong>Instrução:</strong> Abra o <strong>Claude</strong> ou <strong>Gemini</strong>, anexe este arquivo <code class="text-indigo-300">.md</code> (ou cole o texto) e adicione o <strong>print do gráfico</strong> com as suas entradas.
+        </div>
+
+        <textarea id="auditoriaMdPreview" readonly rows="7" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none select-all"></textarea>
+      </div>
+
+      <!-- Passo 2: Colar Resposta da IA & Registrar Score -->
+      <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-emerald-900 text-emerald-300 text-[10px] flex items-center justify-center font-mono">2</span>
+            Registro do Retorno da IA no Terminal
+          </span>
+          <span class="text-[11px] text-slate-400">O Score e os pontos são extraídos automaticamente ao colar</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Score Comportamental (0 a 10):</label>
+            <input type="number" id="inputAuditoriaScore" min="0" max="10" step="0.1" placeholder="Ex: 9.0" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm font-mono font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Veredito da IA (Resumo):</label>
+            <input type="text" id="inputAuditoriaVeredito" placeholder="Ex: CONFORMIDADE OPERACIONAL PLENA" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Cole aqui a resposta completa da IA:</label>
+          <textarea id="textareaRespostaIA" oninput="window.processarColagemRespostaIA()" rows="6" placeholder="Cole a mensagem retornada pelo Claude ou Gemini..." class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+        <span id="auditoriaFeedbackMsg" class="text-xs text-emerald-400 font-mono hidden"></span>
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="window.salvarAuditoriaIA()" class="px-4 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-colors shadow-sm flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Salvar Score e Parecer no Histórico
+          </button>
+          <button onclick="window.closeModalAuditoriaIA()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
             Cancelar
           </button>
         </div>

@@ -3,7 +3,7 @@
  * Versão MVP PropFirmTradeCoach com Calendário Oficial 3 Estrelas
  */
 
-import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV, calculateRiskTiers, isPregaoConsolidado } from './calculations.js';
+import { CONFIG, calculateMetrics, checkAssimetriaLote, formatCurrency, formatPercent, parseProfitCSV, calculateRiskTiers, isPregaoConsolidado, PLANO_DE_TRADE_PADRAO, gerarPromptAuditoriaMD, parseRetornoAuditoriaIA } from './calculations.js';
 
 const STORAGE_KEY = 'euroinvest_avaliacao_data_v1';
 
@@ -192,6 +192,7 @@ const AUDITED_INITIAL_PREGOES = [
     setup: "Price Action / Consolidação",
     assimetriaLote: true,
     consolidado: true,
+    scoreComportamental: 5.5,
     analiseEstrategica: "Operação aberta fora do horário estipulado (pós-meio-dia). Entrada com 2 contratos na consolidação, adicionados mais 2 contratos esperando retomada que não ocorreu, gerando loss. O Trade 3 foi excelente (+310 pts), recuperando o dia e empatando a conta. O erro residiu em não desligar a tela naquele momento e insistir em operar à tarde num mercado com baixo volume e volatilidade, sofrendo 2 losses adicionais no fim do dia. Ponto positivo: encerrou a sessão com perda controlada (-R$ 62,09), prevenindo o aumento do drawdown e eliminando qualquer risco de dia de fúria.",
     parecerCoach: {
       veredito: "DESVIO DE JANELA & ASSIMETRIA DE LOTE",
@@ -225,6 +226,7 @@ const AUDITED_INITIAL_PREGOES = [
     setup: "VWAP e Volume Profile (POC/VAH/VAL)",
     assimetriaLote: false,
     consolidado: true,
+    scoreComportamental: 9.5,
     analiseEstrategica: "Execução perfeita na janela matinal (1h07 de tela). 100% na mão base de 2 contratos. Payoff de 3.49x. Único stop às 10:00 (abertura à vista) foi curto (-45 pts) e encerrado prontamente. Entrada seguinte limpa (+250 pts) e encerramento imediato do dia.",
     parecerCoach: {
       veredito: "EXECUÇÃO DE PADRÃO INSTITUCIONAL",
@@ -263,6 +265,9 @@ function loadData() {
         }
         if (!Array.isArray(appData.diasSemOperacao)) {
           appData.diasSemOperacao = [];
+        }
+        if (!appData.planoTrade) {
+          appData.planoTrade = { ...PLANO_DE_TRADE_PADRAO };
         }
 
         // Garante que os pregões auditados oficiais estejam presentes (recuperação automática de histórico)
@@ -533,12 +538,16 @@ function renderChart(m) {
   for (let i = 1; i <= maxDays; i++) {
     const diaReal = m.historico[i - 1];
     let dataFormatada = '—';
+    let scoreTexto = 'Score: —';
     if (diaReal && diaReal.data) {
       const [, mes, dia] = diaReal.data.split('-');
       dataFormatada = `${dia}/${mes}`;
+      if (diaReal.scoreComportamental !== undefined && diaReal.scoreComportamental !== null) {
+        scoreTexto = `Score: ${Number(diaReal.scoreComportamental).toFixed(1)}`;
+      }
     }
-    // Rótulo multi-linha no eixo X: Linha 1 = Pregão i, Linha 2 = Data (ex: 12/11)
-    labels.push([`Pregão ${i}`, dataFormatada]);
+    // Rótulo multi-linha no eixo X: Linha 1 = Pregão i, Linha 2 = Data (ex: 12/11), Linha 3 = Score IA
+    labels.push([`Pregão ${i}`, dataFormatada, scoreTexto]);
     targetData.push(metaAlvo);
     floorData.push(pisoAlvo);
 
@@ -695,7 +704,7 @@ function renderHistoryTable(m) {
   if (!tbody) return;
 
   if (m.historico.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para carregar o seu arquivo de backup.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-slate-500">Nenhum pregão registrado ainda. Use o formulário à esquerda ou clique em <strong>Restaurar</strong> acima para carregar o seu arquivo de backup.</td></tr>`;
     return;
   }
 
@@ -704,6 +713,22 @@ function renderHistoryTable(m) {
     const badgeColor = isGain ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800' : 'text-red-400 bg-red-950/40 border-red-800';
     const sign = isGain ? '+' : '';
     const isConsolidado = dia.consolidado || isPregaoConsolidado(dia.data);
+
+    let scoreBadge = `<button onclick="window.openAuditoriaModal('${dia.id}')" class="px-2 py-0.5 rounded text-[11px] font-mono bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 border border-indigo-800 transition-colors" title="Submeter à IA para obter Score">🤖 Auditar</button>`;
+    if (dia.scoreComportamental !== undefined && dia.scoreComportamental !== null) {
+      const scoreVal = Number(dia.scoreComportamental);
+      let scoreCor = 'text-red-400 bg-red-950/40 border-red-800';
+      if (scoreVal >= 8.5) {
+        scoreCor = 'text-emerald-400 bg-emerald-950/40 border-emerald-800';
+      } else if (scoreVal >= 6.0) {
+        scoreCor = 'text-amber-400 bg-amber-950/40 border-amber-800';
+      }
+      scoreBadge = `
+        <button onclick="window.openAuditoriaModal('${dia.id}')" class="inline-flex items-center gap-1 px-2 py-0.5 rounded border ${scoreCor} font-mono font-bold text-xs hover:opacity-80 transition-opacity" title="Clique para ver ou reauditar com IA">
+          <span>${scoreVal.toFixed(1)}</span>
+        </button>
+      `;
+    }
 
     return `
       <tr class="border-b border-slate-800 hover:bg-slate-800/40 transition-colors">
@@ -731,10 +756,16 @@ function renderHistoryTable(m) {
           </span>
           ${dia.teveExcedenteConsistencia ? `<span class="ml-1 text-[10px] text-amber-400" title="Excedente de R$ 700 descartado na apuração">⚠️ Capped</span>` : ''}
         </td>
+        <td class="py-3 px-3 text-xs font-mono text-center">
+          ${scoreBadge}
+        </td>
         <td class="py-3 px-4 text-xs font-mono font-semibold text-sky-400">${formatCurrency(dia.saldoRealAcumulado, true)}</td>
         <td class="py-3 px-4 text-xs font-mono ${dia.taxaDiasPositivosAcumulada >= 60 ? 'text-emerald-400' : 'text-amber-400'}">${dia.taxaDiasPositivosAcumulada}%</td>
         <td class="py-3 px-4 text-center">
           <div class="flex items-center justify-center gap-1.5">
+            <button onclick="window.openAuditoriaModal('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-indigo-400 hover:text-indigo-300" title="Auditoria IA / Dossiê .MD">
+              <i data-lucide="bot" class="w-4 h-4"></i>
+            </button>
             <button onclick="window.openCoachModal('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-sky-400 hover:text-sky-300" title="Parecer do Coach">
               <i data-lucide="file-text" class="w-4 h-4"></i>
             </button>
@@ -1459,4 +1490,167 @@ window.confirmarImportacaoCsv = function() {
   if (abertosAtualizados > 0) msg += `\n• ${abertosAtualizados} pregão(ões) em aberto atualizado(s).`;
   if (consolidadosBloqueados > 0) msg += `\n• ${consolidadosBloqueados} pregão(ões) consolidado(s) pós-B3 mantido(s) inalterado(s).`;
   alert(msg);
+};
+
+/**
+ * Funções de Controle do Plano de Trade Oficial e Auditoria IA
+ */
+let selectedPregaoAuditoria = null;
+
+window.openModalPlanoTrade = function() {
+  const modal = document.getElementById('modalPlanoTrade');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons({ root: modal });
+  }
+};
+
+window.closeModalPlanoTrade = function() {
+  const modal = document.getElementById('modalPlanoTrade');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.openAuditoriaModal = function(pregaoId) {
+  const pregao = appData.pregoes.find(p => p.id === pregaoId);
+  if (!pregao) {
+    alert("Pregão não encontrado.");
+    return;
+  }
+  selectedPregaoAuditoria = pregao;
+
+  const modal = document.getElementById('modalAuditoriaIA');
+  const titulo = document.getElementById('auditoriaModalTitulo');
+  const subtitulo = document.getElementById('auditoriaModalSubtitulo');
+  const preview = document.getElementById('auditoriaMdPreview');
+  const inputScore = document.getElementById('inputAuditoriaScore');
+  const inputVeredito = document.getElementById('inputAuditoriaVeredito');
+  const textareaResposta = document.getElementById('textareaRespostaIA');
+  const feedbackMsg = document.getElementById('auditoriaFeedbackMsg');
+
+  if (titulo) titulo.textContent = `Auditoria com IA — Pregão #${pregao.pregaoNumero || '?'} (${formatDateBR(pregao.data)})`;
+  if (subtitulo) subtitulo.textContent = `Líquido: ${formatCurrency(pregao.resultadoLiquido, true)} | Pontos: ${pregao.pontos > 0 ? '+' : ''}${pregao.pontos} pts`;
+
+  // Gera o markdown do dossiê com plano de trade e dados da sessão
+  const markdownText = gerarPromptAuditoriaMD(pregao, appData.planoTrade || PLANO_DE_TRADE_PADRAO);
+  if (preview) preview.value = markdownText;
+
+  // Carrega valores existentes se já auditado
+  if (inputScore) inputScore.value = (pregao.scoreComportamental !== undefined && pregao.scoreComportamental !== null) ? pregao.scoreComportamental : '';
+  if (inputVeredito) inputVeredito.value = pregao.parecerCoach?.veredito || '';
+  if (textareaResposta) {
+    if (pregao.parecerCoach?.rawResponse) {
+      textareaResposta.value = pregao.parecerCoach.rawResponse;
+    } else if (pregao.parecerCoach?.sintese) {
+      textareaResposta.value = `### VEREDITO\n${pregao.parecerCoach.veredito || ''}\n\n### SCORE COMPORTAMENTAL\n${pregao.scoreComportamental || '-'}/10\n\n### SÍNTESE DA ATUAÇÃO\n${pregao.parecerCoach.sintese}`;
+    } else {
+      textareaResposta.value = '';
+    }
+  }
+  if (feedbackMsg) feedbackMsg.classList.add('hidden');
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons({ root: modal });
+  }
+};
+
+window.closeModalAuditoriaIA = function() {
+  const modal = document.getElementById('modalAuditoriaIA');
+  if (modal) modal.classList.add('hidden');
+  selectedPregaoAuditoria = null;
+};
+
+window.baixarArquivoAuditoriaMD = function() {
+  if (!selectedPregaoAuditoria) return;
+  const preview = document.getElementById('auditoriaMdPreview');
+  const conteudo = preview ? preview.value : gerarPromptAuditoriaMD(selectedPregaoAuditoria, appData.planoTrade || PLANO_DE_TRADE_PADRAO);
+  const blob = new Blob([conteudo], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `auditoria_pregao_${selectedPregaoAuditoria.data}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+window.copiarTextoMdAuditoria = function() {
+  const preview = document.getElementById('auditoriaMdPreview');
+  if (!preview) return;
+  preview.select();
+  navigator.clipboard.writeText(preview.value).then(() => {
+    alert("Dossiê copiado com sucesso! Agora anexe ou cole no Claude/Gemini junto com o print do gráfico.");
+  }).catch(() => {
+    document.execCommand('copy');
+    alert("Dossiê copiado!");
+  });
+};
+
+window.processarColagemRespostaIA = function() {
+  const textarea = document.getElementById('textareaRespostaIA');
+  if (!textarea) return;
+  const texto = textarea.value;
+  if (!texto || texto.trim().length < 20) return;
+
+  const parsed = parseRetornoAuditoriaIA(texto);
+  const inputScore = document.getElementById('inputAuditoriaScore');
+  const inputVeredito = document.getElementById('inputAuditoriaVeredito');
+  const feedbackMsg = document.getElementById('auditoriaFeedbackMsg');
+
+  if (parsed.score !== null && inputScore) {
+    inputScore.value = parsed.score;
+  }
+  if (parsed.veredito && inputVeredito) {
+    inputVeredito.value = parsed.veredito;
+  }
+  if (feedbackMsg) {
+    feedbackMsg.textContent = `✓ Dados extraídos: Score ${parsed.score !== null ? parsed.score : '—'}/10`;
+    feedbackMsg.classList.remove('hidden');
+  }
+};
+
+window.salvarAuditoriaIA = function() {
+  if (!selectedPregaoAuditoria) {
+    alert("Nenhum pregão selecionado.");
+    return;
+  }
+
+  const inputScore = document.getElementById('inputAuditoriaScore');
+  const inputVeredito = document.getElementById('inputAuditoriaVeredito');
+  const textareaResposta = document.getElementById('textareaRespostaIA');
+
+  const scoreNum = (inputScore && inputScore.value !== '') ? parseFloat(inputScore.value) : null;
+  const veredito = inputVeredito ? inputVeredito.value.trim() : '';
+  const rawText = textareaResposta ? textareaResposta.value.trim() : '';
+
+  if (scoreNum !== null && (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10)) {
+    alert("Por favor, informe um Score Comportamental válido entre 0 e 10 (ex: 8.5).");
+    return;
+  }
+
+  // Parse do texto para extrair acertos, erros e diretrizes
+  const parsed = parseRetornoAuditoriaIA(rawText);
+
+  // Localiza o pregão no appData
+  const idx = appData.pregoes.findIndex(p => p.id === selectedPregaoAuditoria.id);
+  if (idx === -1) {
+    alert("Pregão não encontrado para atualização.");
+    return;
+  }
+
+  appData.pregoes[idx].scoreComportamental = scoreNum;
+  appData.pregoes[idx].parecerCoach = {
+    veredito: veredito || parsed.veredito || "AVALIAÇÃO DE DESEMPENHO",
+    sintese: parsed.sintese || rawText.substring(0, 300) || "Auditoria realizada via IA.",
+    acertos: parsed.acertos && parsed.acertos.length > 0 ? parsed.acertos : (appData.pregoes[idx].parecerCoach?.acertos || []),
+    erros: parsed.erros && parsed.erros.length > 0 ? parsed.erros : (appData.pregoes[idx].parecerCoach?.erros || []),
+    diretriz: parsed.diretriz || (appData.pregoes[idx].parecerCoach?.diretriz || "Seguir estritamente o plano de trade."),
+    rawResponse: rawText
+  };
+
+  saveData();
+  renderApp();
+  window.closeModalAuditoriaIA();
+  alert(`Auditoria do Pregão #${appData.pregoes[idx].pregaoNumero || ''} salva com sucesso!\nScore Comportamental: ${scoreNum !== null ? scoreNum.toFixed(1) : 'Não informado'}`);
 };

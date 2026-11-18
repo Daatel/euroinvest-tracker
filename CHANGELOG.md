@@ -2,6 +2,19 @@
 
 ---
 
+## v1.9 — 2026-11-17 (Sessão: Plano de Trade Oficial, Dossiê .MD de Auditoria IA e Score Comportamental)
+
+### 🚀 Plano de Trade & Auditoria Comportamental com IA (`web/calculations.js`, `web/index.html`, `web/app.js`, `web/test_calculations.js`)
+- **Plano de Trade Oficial Integrado (`PLANO_DE_TRADE_PADRAO`):** Formalização técnica dos parâmetros operacionais para a mesa da Euroinvest (Setup VWAP/Volume Profile, Janela 09h15-12h00, Alvo padrão de 200 pts, Stop mínimo técnico de 200 pts, Lote base de 2 cts [máx 3 cts], Disjuntores diários e Regras de Bloqueio Rígido). Modal interativo acessível pelo botão `[ 📋 Plano de Trade ]`.
+- **Dossiê Estruturado para Auditoria IA (`gerarPromptAuditoriaMD`):** Geração e download em 1 clique de arquivo `.md` completo (`auditoria_pregao_YYYY-MM-DD.md`) contendo as diretrizes do Plano de Trade, dados quantitativos do pregão e instruções detalhadas para o trader submeter ao Claude ou Gemini junto com o print do gráfico.
+- **Registro e Parser do Parecer da IA (`parseRetornoAuditoriaIA`):** Interface para colar a resposta do LLM com extração automática do **Score Comportamental (0 a 10)**, Veredito, Acertos, Desvios e Diretriz Corretiva.
+- **Score Comportamental no Gráfico (3ª Linha do Eixo X):** O gráfico agora correlaciona diretamente o resultado financeiro com a disciplina do operador através de rótulos de 3 linhas (`Pregão X / DD/MM / Score: Y.Y`), permitindo visualizar quando um ganho decorreu de sorte/indisciplina versus perda com execução técnica impecável.
+- **Coluna 'Score IA' no Histórico de Pregões:** Tabela enriquecida com badges visuais de pontuação (`🟢 ≥ 8.5`, `🟡 ≥ 6.0`, `🔴 < 6.0`) e botão de ação rápida `[ 🤖 Auditar ]`.
+- **Manutenção Sóbria do Banner de Lembrete:** Preservação da regra condicional inteligente que ativa o lembrete apenas em fechamentos semanais e finais de semana para garantir limpeza visual diária.
+- **Validação com 11 Suítes de Testes Unitários:** 100% de cobertura nos cálculos, regras de consistência, assimetria de lote, persistência e parser de IA.
+
+---
+
 ## v1.8 — 2026-11-17 (Sessão: Rótulos com Datas no Eixo X, Importação Cumulativa e Trava de Imutabilidade Pós-B3)
 
 ### 🚀 Gráfico, Integridade de Histórico & Imutabilidade (`web/calculations.js`, `web/app.js`, `web/test_calculations.js`)
