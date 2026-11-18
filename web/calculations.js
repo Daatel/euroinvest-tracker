@@ -293,25 +293,68 @@ export function calculateMetrics(pregoes = [], customConfig = {}, diasSemOperaca
  * @param {string} csvText Conteúdo bruto do arquivo CSV
  * @returns {Object} { pregoes: Array, diasSemOperacao: Array, totalTrades: number }
  */
+/**
+ * Parser Universal de Relatórios de Trading (RocketTrader, Profit, Nelogica, Tryd, etc.)
+ * Resiliente a variações de nomenclatura de colunas, delimitadores (; , \t) e formatos de valores.
+ * @param {string} csvText Texto bruto do arquivo de exportação
+ * @returns {Object|null}
+ */
 export function parseProfitCSV(csvText) {
   if (!csvText || typeof csvText !== 'string') return null;
 
   const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   if (lines.length < 2) return null;
 
-  const delimiter = lines[0].includes(';') ? ';' : ',';
-  const header = lines[0].split(delimiter).map(h => h.replace(/["']/g, '').trim());
+  const firstLine = lines[0];
+  const delimiter = firstLine.includes('\t') ? '\t' : (firstLine.includes(';') ? ';' : ',');
+  
+  function norm(str) {
+    return String(str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/["']/g, '')
+      .trim();
+  }
 
-  const pnlIntervaloIndex = header.findIndex(h => h.includes('P&L Intervalo'));
-  const pnlTotIndex = header.findIndex(h => h.includes('P&L Total'));
-  const pnlOpIndex = header.findIndex(h => h.includes('P&L Operação') || h.includes('P&L Operacao'));
-  const aberturaIndex = header.findIndex(h => h.includes('Abertura'));
-  const statusIndex = header.findIndex(h => h.includes('Status'));
-  const qtdIndex = header.findIndex(h => h.includes('Qtd C') || h.includes('Qtd Compra') || h.includes('Qtd V') || h.includes('Qtd Venda'));
-  const precoCIndex = header.findIndex(h => h.includes('Preço C') || h.includes('Preco C') || h.includes('Preço de Compra') || h.includes('Preco de Compra'));
-  const precoVIndex = header.findIndex(h => h.includes('Preço V') || h.includes('Preco V') || h.includes('Preço de Venda') || h.includes('Preco de Venda'));
+  const rawHeader = firstLine.split(delimiter).map(h => h.replace(/["']/g, '').trim());
+  const normHeader = rawHeader.map(norm);
 
-  const pnlIndex = pnlIntervaloIndex !== -1 ? pnlIntervaloIndex : (pnlTotIndex !== -1 ? pnlTotIndex : pnlOpIndex);
+  // Busca inteligente de colunas por múltiplos sinônimos
+  const pnlIndex = normHeader.findIndex(h => 
+    h === 'p&l total' || h === 'p&l operacao' || h === 'p&l intervalo' || h.includes('p&l') || 
+    h.includes('resultado liquido') || h.includes('liquido') || h.includes('lucro') || h.includes('profit')
+  );
+  
+  const aberturaIndex = normHeader.findIndex(h => 
+    h.includes('abertura') || h === 'data' || h.includes('data/hora') || h.includes('inicio') || 
+    h.includes('horario') || h.includes('open') || h.includes('date')
+  );
+
+  const statusIndex = normHeader.findIndex(h => 
+    h.includes('status') || h === 'tipo' || h.includes('resultado') || h.includes('win')
+  );
+
+  const qtdIndex = normHeader.findIndex(h => 
+    h.includes('qtd c') || h.includes('qtd v') || h.includes('qtd compra') || h.includes('qtd venda') || 
+    h.includes('qtd') || h.includes('quantidade') || h.includes('contratos') || h.includes('lote') || 
+    h.includes('volume') || h.includes('qty') || h.includes('size')
+  );
+
+  const precoCIndex = normHeader.findIndex(h => 
+    h.includes('preco c') || h.includes('preco compra') || h.includes('preco de compra') || 
+    h.includes('preco entrada') || h.includes('entrada') || h.includes('buy')
+  );
+
+  const precoVIndex = normHeader.findIndex(h => 
+    h.includes('preco v') || h.includes('preco venda') || h.includes('preco de venda') || 
+    h.includes('preco saida') || h.includes('saida') || h.includes('sell')
+  );
+
+  const pontosIndex = normHeader.findIndex(h => 
+    h.includes('pontos') || h === 'pts' || h.includes('variacao (pts)') || h.includes('points')
+  );
+
   if (aberturaIndex === -1 || pnlIndex === -1) return null;
 
   function parseCurrencyVal(val) {
@@ -338,28 +381,45 @@ export function parseProfitCSV(csvText) {
     if (!aberturaRaw) return null;
     const clean = String(aberturaRaw).replace(/["']/g, '').trim();
     const [d] = clean.split(' ');
-    if (!d || !d.includes('/')) return null;
-    const parts = d.split('/');
-    const dia = parts[0].padStart(2, '0');
-    const mes = parts[1].padStart(2, '0');
-    let ano = parts[2];
-    if (!ano) {
-      ano = new Date().getFullYear().toString();
-    } else if (ano.length === 2) {
-      ano = '20' + ano;
+    if (!d) return null;
+
+    if (d.includes('/')) {
+      const parts = d.split('/');
+      const dia = parts[0].padStart(2, '0');
+      const mes = parts[1].padStart(2, '0');
+      let ano = parts[2];
+      if (!ano) {
+        ano = new Date().getFullYear().toString();
+      } else if (ano.length === 2) {
+        ano = '20' + ano;
+      }
+      return `${ano}-${mes}-${dia}`;
+    } else if (d.includes('-')) {
+      const parts = d.split('-');
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        return d;
+      } else {
+        // DD-MM-YYYY
+        const dia = parts[0].padStart(2, '0');
+        const mes = parts[1].padStart(2, '0');
+        let ano = parts[2] || new Date().getFullYear().toString();
+        if (ano.length === 2) ano = '20' + ano;
+        return `${ano}-${mes}-${dia}`;
+      }
     }
-    return `${ano}-${mes}-${dia}`;
+    return null;
   }
 
   const trades = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(delimiter).map(c => c.trim());
-    if (cols.length < 4) continue;
+    if (cols.length < 3) continue;
     const dateIso = parseDateIsoStr(cols[aberturaIndex]);
     if (!dateIso) continue;
 
-    const status = cols[statusIndex]?.replace(/["']/g, '') || '';
-    const qtd = parseInt(cols[qtdIndex]?.replace(/["']/g, ''), 10) || 2;
+    let status = statusIndex !== -1 ? (cols[statusIndex]?.replace(/["']/g, '') || '') : '';
+    const qtd = qtdIndex !== -1 ? (parseInt(cols[qtdIndex]?.replace(/["']/g, ''), 10) || 2) : 2;
     const pnlRaw = cols[pnlIndex] || '0';
     let liquido = 0;
     let pontos = 0;
@@ -367,10 +427,10 @@ export function parseProfitCSV(csvText) {
     if (pnlRaw.includes('|')) {
       const parts = pnlRaw.split('|');
       if (parts[1].includes('R$')) {
-        // Formato novo do Profit: "0.01 | R$ 8,53"
+        // Exemplo Rocket / Profit: "0.01 | R$ 8,53"
         liquido = parseCurrencyVal(parts[1]);
       } else {
-        // Formato clássico do Profit: "98,53 | 250.0"
+        // Exemplo Clássico: "98,53 | 250.0"
         liquido = parseCurrencyVal(parts[0]);
         pontos = parseFloat(parts[1].replace(/["']/g, '').trim()) || 0;
       }
@@ -378,11 +438,21 @@ export function parseProfitCSV(csvText) {
       liquido = parseCurrencyVal(pnlRaw);
     }
 
-    if (pontos === 0 && precoCIndex !== -1 && precoVIndex !== -1) {
+    // Se o status não for explícito, infere pelo resultado líquido
+    if (!status) {
+      status = liquido >= 0 ? 'Vencedora' : 'Perdedora';
+    }
+
+    // Se os pontos não vieram no P&L, tenta extrair da coluna de pontos ou da variação de preços
+    if (pontos === 0 && pontosIndex !== -1 && cols[pontosIndex]) {
+      pontos = parseFloat(cols[pontosIndex].replace(/["']/g, '').replace(',', '.')) || 0;
+    }
+
+    if (pontos === 0 && precoCIndex !== -1 && precoVIndex !== -1 && cols[precoCIndex] && cols[precoVIndex]) {
       const pC = parsePriceVal(cols[precoCIndex]);
       const pV = parsePriceVal(cols[precoVIndex]);
       const diff = Math.abs(pV - pC);
-      const isLoss = status.toLowerCase().includes('perd');
+      const isLoss = status.toLowerCase().includes('perd') || liquido < 0;
       pontos = isLoss ? -diff : diff;
     }
 

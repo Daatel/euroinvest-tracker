@@ -2,14 +2,15 @@
 
 ---
 
-## v2.2 — 2026-11-18 (Sessão: Parser Universal de CSV do Profit — Suporte a Datas Abreviadas e P&L em Moeda)
+## v2.2 — 2026-11-18 (Sessão: Parser Universal Multiplataforma — Suporte a Rocket Trader, Profit e Nelogica)
 
-### 🚀 Compatibilidade Ampla de Relatórios do Profit (`web/calculations.js`, `web/test_calculations.js`)
-- **Resolução de Datas Abreviadas na Coluna 'Abertura':** O Profit exporta datas sem o ano (ex: `"18/11 10:30:07"`). O parser agora autocompleta com o ano corrente (`2026`), eliminando falhas de chave de data inválida (`"undefined-11-18"`).
-- **Detecção Flexível de Colunas de Contratos:** Suporte automático para cabeçalhos com colunas abreviadas (`"Qtd C"`, `"Qtd V"`), mantendo retrocompatibilidade com `"Qtd Compra"` e `"Qtd Venda"`.
-- **Parser Financeiro Híbrido de P&L:** Suporte ao formato novo de células do Profit com prefixo `"R$"` (ex: `"0.01 | R$ 8,53"` e `"R$ -1,47"`), além do formato tradicional (`"98,53 | 250.0"`).
-- **Cálculo Automático de Pontos por Variação de Preço:** Quando o relatório omite a pontuação direta na coluna de P&L, os pontos são calculados com precisão a partir das colunas `"Preço C"` e `"Preço V"`, garantindo o cálculo fiel de pontos, bruto e taxas B3.
-- **12 Testes Unitários 100% Aprovados:** Inclusão de suíte de testes com os dados reais exportados pelo Profit no pregão de 18/11.
+### 🚀 Resiliência Total de Importação de Relatórios (`web/calculations.js`, `web/index.html`, `web/test_calculations.js`)
+- **Arquitetura Agnostica de Plataforma (Rocket Trader, Profit, Tryd):** Mecanismo de busca de colunas por normalização semântica (remoção de acentos, normalização de caracteres e lista extensiva de sinônimos de mercado).
+- **Detecção Automática de Delimitadores:** Suporte transparente a ponto e vírgula (`;`), vírgula (`,`) e tabulações (`\t`).
+- **Resolução de Datas Abreviadas:** Normalização automática de datas sem ano (ex: `"18/11 10:30:07"`), completando para o ano corrente e aceitando formatos `DD/MM/AAAA`, `DD/MM/AA`, `AAAA-MM-DD` e `DD-MM-AAAA`.
+- **Inferência Resiliente de Status e Pontuação:** Caso o relatório não possua coluna explícita de status ou pontos, o motor calcula os pontos automaticamente pela variação de preço de entrada/saída (`Preço C` e `Preço V`) e infere o status pelo resultado financeiro.
+- **Parser Financeiro Híbrido:** Extração de valores em reais (`R$`), percentuais, decimais com ponto ou vírgula, e notações compostas com pipe (`|`).
+- **12 Testes Unitários 100% Aprovados:** Cobertura de relatórios legados e modernos.
 
 ---
 
