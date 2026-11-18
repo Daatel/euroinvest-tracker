@@ -2,6 +2,20 @@
 
 ---
 
+## v2.1 — 2026-11-17 (Sessão: Matriz Objetiva de Pontuação Ponderada & Seletor de Escopo no Dossiê IA)
+
+### 🚀 Auditoria Comportamental Determinística & Acessibilidade (`web/calculations.js`, `web/index.html`, `web/app.js`, `web/test_calculations.js`)
+- **Matriz Objetiva de Pontuação Comportamental (Rubric 0.0 a 10.0):** Eliminação de subjetividade do auditor através de 4 dimensões com pesos matemáticos exatos e memória de cálculo obrigatória:
+  1. *Janela Operacional (2.5 pts):* Penalidades para leilão das 10h (-0.5 pt), turno da tarde (-2.0 pts) ou sessão iniciada fora do horário (-2.5 pts).
+  2. *Lote & Simetria (2.5 pts):* Penalidades para assimetria de contratos (-1.5 pt) ou alavancagem ≥ 4 cts (-2.5 pts).
+  3. *Stop Técnico & Preço Médio (2.5 pts):* Penalidades para stop < 200 pts (-1.0 pt) ou preço médio contra consolidação (-2.5 pts).
+  4. *Disjuntores & Overtrading (2.5 pts):* Penalidades para overtrading pós-disjuntor (-1.5 pt) ou devolução de capital pós-empate (-1.0 pt).
+  - *Trava Crítica Fail-Safe:* Faltas graves duplas (ex: preço médio à tarde) limitam o teto do score a 2.0.
+- **Seletor de Escopo no Cabeçalho `[ ✨ Dossiê IA ]`:** O modal do cabeçalho agora possui dropdown imediato que permite alternar entre o *Dossiê Consolidado de Toda a Avaliação* e o *Dossiê Específico de Cada Pregão* (#1 12/11, #2 13/11, etc.), com botão de download do `.md` em 1 clique.
+- **Matriz Formal no Modal do Plano de Trade:** Acesso transparente a todos os critérios e deduções no botão `[ 📋 Plano de Trade ]`.
+
+---
+
 ## v2.0 — 2026-11-17 (Sessão: Validação Visual de Print no Dossiê IA, Remoção de Formulário Obsoleto e Tabela Full-Width)
 
 ### 🚀 Layout Amplo & Rigor de Auditoria Visual (`web/calculations.js`, `web/index.html`, `web/app.js`, `web/test_calculations.js`)

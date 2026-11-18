@@ -1073,46 +1073,107 @@ window.closeCoachModal = function() {
 };
 
 /**
- * Modal Dossiê Consolidado para IA
+ * Modal Dossiê para Auditoria da IA (Consolidado ou Pregão Específico)
  */
-window.openDossierModal = function() {
-  const metrics = calculateMetrics(appData.pregoes, appData.meta || {});
+window.openDossierModal = function(pregaoIdSelecionado = null) {
   const modal = document.getElementById('modalDossier');
-  const textarea = document.getElementById('dossierTextarea');
+  const select = document.getElementById('selectDossierEscopo');
+  if (!modal) return;
 
-  let md = `# DOSSIÊ DE AUDITORIA ESTATÍSTICA E COMPORTAMENTAL — TRADER MARCIO LEITE\n`;
-  md += `Mesa Proprietária: Euroinvest (Plano Junior WIN)\n`;
-  md += `Meta: ${formatCurrency(metrics.config.META_FINANCEIRA)} | Piso: ${formatCurrency(metrics.config.PISO_DRAWDOWN)}\n`;
-  md += `Data da Extração: ${new Date().toLocaleDateString('pt-BR')}\n\n`;
+  // Popula o select com a opção consolidada + cada pregão cadastrado
+  if (select) {
+    select.innerHTML = `
+      <option value="consolidado">📊 Avaliação Consolidada (Todos os Pregões)</option>
+      ${appData.pregoes.map(p => `
+        <option value="${p.id}" ${pregaoIdSelecionado === p.id ? 'selected' : ''}>
+          Pregão #${p.pregaoNumero || '?'} — ${formatDateBR(p.data)} (${formatCurrency(p.resultadoLiquido, true)})
+        </option>
+      `).join('')}
+    `;
+    if (pregaoIdSelecionado) {
+      select.value = pregaoIdSelecionado;
+    }
+  }
 
-  md += `## RESUMO CONSOLIDADO ATUAL\n`;
-  md += `- Pregões Operados: ${metrics.totalPregoes} de ${metrics.config.MAX_PREGOES}\n`;
-  md += `- Saldo Real Acumulado: ${formatCurrency(metrics.saldoReal, true)}\n`;
-  md += `- Saldo Apurado (Teto R$ 700/dia): ${formatCurrency(metrics.saldoApurado, true)}\n`;
-  md += `- Taxa de Dias Positivos: ${metrics.taxaDiasPositivos}% (${metrics.diasPositivos}G / ${metrics.diasNegativos}L)\n`;
-  md += `- Meta Diária Recalibrada para 10 dias: ${formatCurrency(metrics.metaDiariaRecalibrada)} / dia\n`;
-  md += `- Margem Livre até o Piso: ${formatCurrency(metrics.margemLivrePiso)}\n`;
-  md += `- Total de Trades: ${metrics.totalTrades} (${metrics.totalTradesGanhos}W / ${metrics.totalTradesPerdidos}L — ${metrics.taxaAcertoTrades}% win rate)\n`;
-  md += `- Pontos Mini Índice: ${metrics.totalPontos} pts\n\n`;
+  window.onChangeDossierEscopo();
 
-  md += `## TABELA HISTÓRICA SESSÃO A SESSÃO\n`;
-  md += `| # | Data | Trades W/L | Mão | Pontos | Bruto | Taxas | Líquido | Acumulado | Horário | Análise do Trader |\n`;
-  md += `|---|---|---|---|---|---|---|---|---|---|---|\n`;
-
-  metrics.historico.forEach(d => {
-    md += `| #${d.pregaoNumero} | ${formatDateBR(d.data)} | ${d.tradesVencedores}W/${d.tradesPerdedores}L | ${d.contratos} cts | ${d.pontos} | ${formatCurrency(d.resultadoBruto)} | ${formatCurrency(d.taxas)} | ${formatCurrency(d.resultadoLiquido)} | ${formatCurrency(d.saldoRealAcumulado)} | ${d.horarioInicio || '--'}-${d.horarioFim || '--'} | ${d.analiseEstrategica || 'Sem notas'} |\n`;
-  });
-
-  md += `\n## INSTRUÇÃO DE ANÁLISE PARA A INTELIGÊNCIA ARTIFICIAL:\n`;
-  md += `Atue como um Engenheiro Sênior de Risco e Gestor de Mesa Proprietária (Prop Firm Risk Manager). Com base nos dados acima:\n`;
-  md += `1. Analise friamente a consistência estatística (relação payoff, assimetria de lotes, horários operados);\n`;
-  md += `2. Identifique os padrões comportamentais de maior sangria financeira e onde residem os acertos técnicos mais consistentes;\n`;
-  md += `3. Projete a viabilidade matemática de aprovação mantendo a regra dos >= 60% de dias positivos e respeitando o limite de 10 pregões;\n`;
-  md += `4. Entregue um plano de ação estrito, sem bajulação, focado exclusivamente em blindar o capital e garantir a aprovação.\n`;
-
-  textarea.value = md;
   modal.classList.remove('hidden');
-  document.getElementById('copySuccessMsg').classList.add('hidden');
+  document.getElementById('copySuccessMsg')?.classList.add('hidden');
+  if (window.lucide) lucide.createIcons({ root: modal });
+};
+
+window.onChangeDossierEscopo = function() {
+  const select = document.getElementById('selectDossierEscopo');
+  const textarea = document.getElementById('dossierTextarea');
+  const titulo = document.getElementById('dossierModalTitulo');
+  if (!textarea || !select) return;
+
+  const escopo = select.value;
+  if (escopo === 'consolidado') {
+    if (titulo) titulo.textContent = 'Dossiê Consolidado da Avaliação (Visão Geral)';
+    const metrics = calculateMetrics(appData.pregoes, appData.meta || {});
+    let md = `# DOSSIÊ DE AUDITORIA ESTATÍSTICA E COMPORTAMENTAL — TRADER MARCIO LEITE\n`;
+    md += `Mesa Proprietária: Euroinvest (Plano Junior WIN)\n`;
+    md += `Meta: ${formatCurrency(metrics.config.META_FINANCEIRA)} | Piso: ${formatCurrency(metrics.config.PISO_DRAWDOWN)}\n`;
+    md += `Data da Extração: ${new Date().toLocaleDateString('pt-BR')}\n\n`;
+
+    md += `## RESUMO CONSOLIDADO ATUAL\n`;
+    md += `- Pregões Operados: ${metrics.totalPregoes} de ${metrics.config.MAX_PREGOES}\n`;
+    md += `- Saldo Real Acumulado: ${formatCurrency(metrics.saldoReal, true)}\n`;
+    md += `- Saldo Apurado (Teto R$ 700/dia): ${formatCurrency(metrics.saldoApurado, true)}\n`;
+    md += `- Taxa de Dias Positivos: ${metrics.taxaDiasPositivos}% (${metrics.diasPositivos}G / ${metrics.diasNegativos}L)\n`;
+    md += `- Meta Diária Recalibrada para 10 dias: ${formatCurrency(metrics.metaDiariaRecalibrada)} / dia\n`;
+    md += `- Margem Livre até o Piso: ${formatCurrency(metrics.margemLivrePiso)}\n`;
+    md += `- Total de Trades: ${metrics.totalTrades} (${metrics.totalTradesGanhos}W / ${metrics.totalTradesPerdidos}L — ${metrics.taxaAcertoTrades}% win rate)\n`;
+    md += `- Pontos Mini Índice: ${metrics.totalPontos} pts\n\n`;
+
+    md += `## TABELA HISTÓRICA SESSÃO A SESSÃO\n`;
+    md += `| # | Data | Trades W/L | Mão | Pontos | Bruto | Taxas | Líquido | Acumulado | Horário | Análise do Trader |\n`;
+    md += `|---|---|---|---|---|---|---|---|---|---|---|\n`;
+
+    metrics.historico.forEach(d => {
+      md += `| #${d.pregaoNumero} | ${formatDateBR(d.data)} | ${d.tradesVencedores}W/${d.tradesPerdedores}L | ${d.contratos} cts | ${d.pontos} | ${formatCurrency(d.resultadoBruto)} | ${formatCurrency(d.taxas)} | ${formatCurrency(d.resultadoLiquido)} | ${formatCurrency(d.saldoRealAcumulado)} | ${d.horarioInicio || '--'}-${d.horarioFim || '--'} | ${d.analiseEstrategica || 'Sem notas'} |\n`;
+    });
+
+    md += `\n## INSTRUÇÃO DE ANÁLISE PARA A INTELIGÊNCIA ARTIFICIAL:\n`;
+    md += `Atue como um Engenheiro Sênior de Risco e Gestor de Mesa Proprietária (Prop Firm Risk Manager). Com base nos dados acima:\n`;
+    md += `1. Analise friamente a consistência estatística (relação payoff, assimetria de lotes, horários operados);\n`;
+    md += `2. Identifique os padrões comportamentais de maior sangria financeira e onde residem os acertos técnicos mais consistentes;\n`;
+    md += `3. Projete a viabilidade matemática de aprovação mantendo a regra dos >= 60% de dias positivos e respeitando o limite de 10 pregões;\n`;
+    md += `4. Entregue um plano de ação estrito, sem bajulação, focado exclusivamente em blindar o capital e garantir a aprovação.\n`;
+
+    textarea.value = md;
+  } else {
+    const pregao = appData.pregoes.find(p => p.id === escopo);
+    if (pregao) {
+      if (titulo) titulo.textContent = `Dossiê de Auditoria — Pregão #${pregao.pregaoNumero || '?'} (${formatDateBR(pregao.data)})`;
+      textarea.value = gerarPromptAuditoriaMD(pregao, appData.planoTrade || PLANO_DE_TRADE_PADRAO);
+    }
+  }
+};
+
+window.baixarDossierAtual = function() {
+  const select = document.getElementById('selectDossierEscopo');
+  const textarea = document.getElementById('dossierTextarea');
+  if (!textarea) return;
+
+  const escopo = select ? select.value : 'consolidado';
+  let nomeArquivo = `dossie_consolidado_euroinvest_${new Date().toISOString().split('T')[0]}.md`;
+  if (escopo !== 'consolidado') {
+    const pregao = appData.pregoes.find(p => p.id === escopo);
+    if (pregao) nomeArquivo = `auditoria_pregao_${pregao.data}.md`;
+  }
+
+  const blob = new Blob([textarea.value], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeArquivo;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
 };
 
 window.closeDossierModal = function() {

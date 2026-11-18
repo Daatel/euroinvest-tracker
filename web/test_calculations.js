@@ -133,32 +133,41 @@ const mdOutput = gerarPromptAuditoriaMD(pregaoTesteMD);
 console.log("MD gerado contém Plano de Trade?", mdOutput.includes("PLANO DE TRADE OFICIAL"), "(Esperado: true)");
 console.log("MD gerado contém R$ 320,18?", mdOutput.includes("320,18"), "(Esperado: true)");
 console.log("MD gerado contém checagem obrigatória do print?", mdOutput.includes("CHECAGEM OBRIGATÓRIA DE INTEGRIDADE DO PRINT"), "(Esperado: true)");
+console.log("MD gerado contém Matriz Objetiva de Pontuação?", mdOutput.includes("MATRIZ OBJETIVA DE PONTUAÇÃO PONDERADA"), "(Esperado: true)");
 
 console.log("\n=== TESTE 11: PARSER DE RETORNO DA IA E SCORE COMPORTAMENTAL ===");
 const respostaExemploIA = `
-### SCORE COMPORTAMENTAL: 9.5/10
+### MEMÓRIA DE CÁLCULO DO SCORE (Base: 10.0):
+- [1] Janela Operacional: [0.0 / 2.5] (Dedução: -2.5 | Operação iniciada às 13h46 à tarde)
+- [2] Lote & Simetria: [1.0 / 2.5] (Dedução: -1.5 | Assimetria de contratos no Trade 2)
+- [3] Stop Técnico & Preço Médio: [0.0 / 2.5] (Dedução: -2.5 | Preço médio contra consolidação)
+- [4] Disjuntores & Parada: [1.5 / 2.5] (Dedução: -1.0 | Recuperou prejuízo e continuou operando)
+
+### SCORE COMPORTAMENTAL: 2.0 / 10.0
 
 ### VEREDITO EXECUTIVO:
-EXECUÇÃO IMPECÁVEL DE PADRÃO INSTITUCIONAL
+DESVIO DE JANELA & PREÇO MÉDIO EM CONSOLIDAÇÃO
 
 ### SÍNTESE DA SESSÃO:
-O trader operou estritamente dentro da janela matinal, respeitou a mão base de 2 contratos e aceitou o único stop do dia com disciplina exemplar.
+O trader encerrou o dia em pontos positivos, porém violou regras de janela e realizou preço médio contra o movimento.
 
 ### ACERTOS TÉCNICOS & DISCIPLINA:
-- 100% de obediência à janela das 09h05 às 10h12.
-- Stop técnico curto prontamente aceito às 10h00.
+- Recuperação em trade técnico limpo de +310 pts.
+- Corte contido sem dia de fúria.
 
 ### VULNERABILIDADES & DESVIOS:
-- Pequena hesitação no leilão de ações.
+- Operação no período da tarde após às 12h00.
+- Adição de lote em posição perdedora.
 
 ### DIRETRIZ PARA O PRÓXIMO PREGÃO:
-Repetir exatamente a rotina sem aumentar a mão.
+Travar lote estritamente em 2 contratos e encerrar tela às 12h00.
 `;
 
 const parsedIA = parseRetornoAuditoriaIA(respostaExemploIA);
-console.log("Score extraído:", parsedIA.score, "(Esperado: 9.5)");
-console.log("Veredito extraído:", parsedIA.veredito, "(Esperado: EXECUÇÃO IMPECÁVEL DE PADRÃO INSTITUCIONAL)");
+console.log("Score extraído:", parsedIA.score, "(Esperado: 2.0)");
+console.log("Veredito extraído:", parsedIA.veredito, "(Esperado: DESVIO DE JANELA & PREÇO MÉDIO EM CONSOLIDAÇÃO)");
 console.log("Qtd Acertos:", parsedIA.acertos.length, "(Esperado: 2)");
+console.log("Memória de cálculo presente?", Boolean(parsedIA.memoriaCalculo), "(Esperado: true)");
 
 pregaoTesteMD.scoreComportamental = parsedIA.score;
 const mComScore = calculateMetrics([pregaoTesteMD]);

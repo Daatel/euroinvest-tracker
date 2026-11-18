@@ -541,16 +541,42 @@ Antes de qualquer análise de conduta, avalie minuciosamente a imagem do gráfic
 > • Atribua Score 0.0 provisório até o envio da imagem correta.
 > • Na DIRETRIZ, aponte a falha da imagem (ex: "Print enviado é do dia X e não do dia ${dataFormatada}") e oriente o operador a subir o print correto.
 
-### ANÁLISE CRÍTICA OPERACIONAL:
-1. O trader operou dentro da janela permitida (09h15 às 12h00)?
-2. As entradas no print respeitaram os nós de volume e VWAP ou foram impulsivas?
-3. Houve respeito ao stop mínimo de 200 pontos e à mão máxima de 2 a 3 contratos?
-4. O trader desligou a tela ao atingir o disjuntor financeiro ou insistiu e devolveu dinheiro?
+### 📐 MATRIZ OBJETIVA DE PONTUAÇÃO PONDERADA (RUBRIC DE 0.0 A 10.0):
+A avaliação parte de **Base 10.0 pontos**. Aplique as deduções matemáticas exatas abaixo para garantir que a nota seja 100% reproduzível:
 
-Responda OBRIGATORIAMENTE no seguinte formato estruturado (para que o terminal faça o parse exato):
+1. **Janela Operacional (Peso Máximo: 2.5 pts):**
+   - 100% das operações entre 09h15 e 12h00: Dedução 0.0.
+   - Operou durante o leilão das 10h00 sem esperar 2 a 3 minutos: Dedução -0.5 pt.
+   - Operou após as 12h00 (turno da tarde): Dedução -2.0 pts.
+   - Sessão iniciada fora do turno matinal: Dedução -2.5 pts (perda total da dimensão).
 
-### SCORE COMPORTAMENTAL: [Nota de 0.0 a 10.0]
-*(Critério: 10.0 = obediência cega ao plano e gerenciamento perfeito; < 6.0 = quebra de disciplina grave; 0.0 = dia de fúria/indisciplina)*
+2. **Lote & Simetria Operacional (Peso Máximo: 2.5 pts):**
+   - 100% na mão base de 2 contratos (ou até 3 contratos dentro do risco): Dedução 0.0.
+   - Assimetria de Lote (entradas fracionadas ou lotes divergentes): Dedução -1.5 pt.
+   - Operação com 4 contratos ou mais (alavancagem excessiva / risco violino): Dedução -2.5 pts (perda total da dimensão).
+
+3. **Gestão de Stop & Bloqueio de Preço Médio (Peso Máximo: 2.5 pts):**
+   - Todos os stops técnicos respeitados (≥ 200 pts) e zero preço médio: Dedução 0.0.
+   - Stop asfixiado menor que 200 pontos (ruído de HFT): Dedução -1.0 pt.
+   - Fez preço médio contra o movimento / aumentou posição em loss: Dedução -2.5 pts (perda total da dimensão).
+
+4. **Disjuntores Diários & Overtrading (Peso Máximo: 2.5 pts):**
+   - Parou no disjuntor (+R$ 150/+350 ou -R$ 150/-240) e desligou a plataforma: Dedução 0.0.
+   - Continuou operando após disjuntor de gain ou loss (overtrading): Dedução -1.5 pt.
+   - Recuperou prejuízo para o zero e continuou operando, devolvendo capital: Dedução -1.0 pt.
+
+> **TRAVA CRÍTICA DE INDISCIPLINA (FAIL-SAFE):** Se ocorrerem duas infrações graves simultâneas (ex: preço médio + operação no período da tarde), o Score Final é obrigatoriamente limitado ao teto máximo de **2.0**, independentemente das demais dimensões.
+
+### FORMATO DE RESPOSTA OBRIGATÓRIO (RIGOROSO):
+Responda OBRIGATORIAMENTE no seguinte padrão estruturado para leitura do terminal:
+
+### MEMÓRIA DE CÁLCULO DO SCORE (Base: 10.0):
+- [1] Janela Operacional: [Pontos Obtidos / 2.5] (Dedução: -X.X | Motivo)
+- [2] Lote & Simetria: [Pontos Obtidos / 2.5] (Dedução: -X.X | Motivo)
+- [3] Stop Técnico & Preço Médio: [Pontos Obtidos / 2.5] (Dedução: -X.X | Motivo)
+- [4] Disjuntores & Parada: [Pontos Obtidos / 2.5] (Dedução: -X.X | Motivo)
+
+### SCORE COMPORTAMENTAL: [Nota final de 0.0 a 10.0 com 1 casa decimal, ex: 8.5/10 ou 2.0/10]
 
 ### VEREDITO EXECUTIVO:
 [Uma frase curta em caixa alta resumindo o veredito da sessão]
@@ -574,7 +600,7 @@ Responda OBRIGATORIAMENTE no seguinte formato estruturado (para que o terminal f
 /**
  * Faz o parse da resposta gerada pela IA, extraindo o Score e o Parecer estruturado
  * @param {string} texto Mensagem gerada pela IA
- * @returns {Object} { score, veredito, sintese, acertos, erros, diretriz }
+ * @returns {Object} { score, veredito, sintese, acertos, erros, diretriz, memoriaCalculo }
  */
 export function parseRetornoAuditoriaIA(texto) {
   if (!texto || typeof texto !== 'string') return null;
@@ -585,12 +611,17 @@ export function parseRetornoAuditoriaIA(texto) {
     sintese: "",
     acertos: [],
     erros: [],
-    diretriz: ""
+    diretriz: "",
+    memoriaCalculo: ""
   };
 
-  // Extrai Score (ex: "SCORE COMPORTAMENTAL: 8.5" ou "Nota: 9/10" ou "8.5/10")
-  const scoreMatch = texto.match(/SCORE(?:\s+COMPORTAMENTAL)?[:\s]*([0-9]+[.,]?[0-9]*)(?:\s*\/\s*10)?/i) ||
-                     texto.match(/NOTA[:\s]*([0-9]+[.,]?[0-9]*)(?:\s*\/\s*10)?/i);
+  // Extrai Memória de Cálculo se presente
+  const memoriaMatch = texto.match(/###\s*MEMÓRIA[^\n]*\n+([\s\S]*?)(?=###|$)/i);
+  if (memoriaMatch) res.memoriaCalculo = memoriaMatch[1].trim();
+
+  // Extrai Score (ex: "SCORE COMPORTAMENTAL: 8.5" ou "2.0/10" ou "2.0 / 10.0" ou "Nota: 9/10")
+  const scoreMatch = texto.match(/SCORE(?:\s+COMPORTAMENTAL|\s+FINAL)?[:\s]*([0-9]+[.,]?[0-9]*)(?:\s*\/\s*10(?:\.0)?)?/i) ||
+                     texto.match(/NOTA[:\s]*([0-9]+[.,]?[0-9]*)(?:\s*\/\s*10(?:\.0)?)?/i);
   if (scoreMatch && scoreMatch[1]) {
     const num = parseFloat(scoreMatch[1].replace(',', '.'));
     if (!isNaN(num)) {

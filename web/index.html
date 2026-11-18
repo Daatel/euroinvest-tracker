@@ -493,19 +493,29 @@
 
   <!-- Modal 2: Exportar Dossiê para Auditoria da IA -->
   <div id="modalDossier" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-    <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <i data-lucide="sparkles" class="w-5 h-5 text-emerald-400"></i>
-          <h3 class="text-sm font-bold text-white">Dossiê Consolidado para Auditoria da IA</h3>
+          <h3 id="dossierModalTitulo" class="text-sm font-bold text-white">Dossiê para Auditoria com IA</h3>
         </div>
         <button onclick="window.closeDossierModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Copie o bloco estruturado abaixo e cole diretamente no <strong>Claude</strong> ou <strong>Gemini</strong> para receber uma análise profunda e longitudinal da sua evolução técnica e disciplina.
+      <!-- Seletor de Escopo do Dossiê -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-slate-950/70 border border-slate-800">
+        <label for="selectDossierEscopo" class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-4 h-4 text-sky-400"></i> Selecionar Pregão ou Consolidado:
+        </label>
+        <select id="selectDossierEscopo" onchange="window.onChangeDossierEscopo()" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-emerald-500">
+          <option value="consolidado">📊 Avaliação Consolidada (Todos os Pregões)</option>
+        </select>
+      </div>
+
+      <p id="dossierModalDesc" class="text-xs text-slate-400 leading-relaxed">
+        Baixe o arquivo <code class="text-indigo-300">.md</code> ou copie o prompt abaixo para submeter ao <strong>Claude</strong> ou <strong>Gemini</strong> junto com o print do gráfico.
       </p>
 
       <textarea id="dossierTextarea" readonly rows="12" class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 leading-relaxed focus:outline-none select-all"></textarea>
@@ -513,8 +523,11 @@
       <div class="flex items-center justify-between pt-2 border-t border-slate-800">
         <span id="copySuccessMsg" class="text-xs text-emerald-400 font-medium hidden">Copiado para a área de transferência!</span>
         <div class="flex items-center gap-2 ml-auto">
-          <button onclick="window.copyDossierText()" class="px-4 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center gap-1.5 shadow-sm">
-            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Prompt para IA
+          <button id="btnBaixarDossierAtual" onclick="window.baixarDossierAtual()" class="px-3 py-2 rounded-xl text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-500 transition-colors flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar .MD
+          </button>
+          <button onclick="window.copyDossierText()" class="px-3 py-2 rounded-xl text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Texto
           </button>
           <button onclick="window.closeDossierModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors">
             Fechar
@@ -631,16 +644,42 @@
           </div>
         </div>
 
-        <div class="p-3 rounded-xl bg-red-950/20 border border-red-900/40 space-y-1.5">
-          <span class="text-red-400 font-mono font-bold text-[11px] uppercase flex items-center gap-1.5">
-            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Regras de Bloqueio Rígido
+        <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-800/60 space-y-2">
+          <span class="text-indigo-300 font-mono font-bold text-[11px] uppercase flex items-center gap-1.5">
+            <i data-lucide="scale" class="w-3.5 h-3.5 text-indigo-400"></i> 7. Matriz Objetiva de Pontuação Comportamental da IA (Rubric 0 a 10)
           </span>
-          <ul class="text-[11px] text-red-200/90 list-disc list-inside space-y-1">
-            <li>Proibido preço médio contra rompimento de estrutura com volume.</li>
-            <li>Proibido scalping menor que 20 pontos (infração regulamentar B3/Euroinvest).</li>
-            <li>Proibido operar após as 12h00 ou após reverter prejuízo no meio da sessão.</li>
-            <li>Proibido reentrar no mesmo minuto de um stop técnico.</li>
-          </ul>
+          <p class="text-[11px] text-slate-300 leading-relaxed">
+            A auditoria parte de <strong>Base 10.0 pontos</strong> com deduções matemáticas exatas para garantir reproducibilidade:
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+            <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+              <strong class="text-sky-300">1. Janela Operacional (2.5 pts):</strong>
+              <div class="text-slate-400 mt-0.5">• 100% matinal (09h15-12h00): 0.0</div>
+              <div class="text-slate-400">• Leilão 10h00 sem esperar: -0.5 pt</div>
+              <div class="text-slate-400">• Operou à tarde (pós-12h): -2.0 a -2.5 pts</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+              <strong class="text-sky-300">2. Lote & Simetria (2.5 pts):</strong>
+              <div class="text-slate-400 mt-0.5">• Mão base 2 cts (máx 3): 0.0</div>
+              <div class="text-slate-400">• Assimetria de lotes: -1.5 pt</div>
+              <div class="text-slate-400">• Alavancagem ≥ 4 cts: -2.5 pts</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+              <strong class="text-sky-300">3. Stop & Preço Médio (2.5 pts):</strong>
+              <div class="text-slate-400 mt-0.5">• Stop ≥ 200 pts e zero médio: 0.0</div>
+              <div class="text-slate-400">• Stop < 200 pts (ruído HFT): -1.0 pt</div>
+              <div class="text-slate-400">• Preço médio em loss: -2.5 pts</div>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-900/80 border border-slate-800">
+              <strong class="text-sky-300">4. Disjuntores & Parada (2.5 pts):</strong>
+              <div class="text-slate-400 mt-0.5">• Parou no disjuntor de gain/loss: 0.0</div>
+              <div class="text-slate-400">• Overtrading pós-disjuntor: -1.5 pt</div>
+              <div class="text-slate-400">• Empatou e devolveu capital: -1.0 pt</div>
+            </div>
+          </div>
+          <div class="text-[10px] text-amber-300/90 font-mono mt-1">
+            ⚠️ Trava Crítica: Preço médio + operação à tarde limita o score máximo automaticamente em 2.0.
+          </div>
         </div>
       </div>
 
