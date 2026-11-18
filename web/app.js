@@ -1174,7 +1174,6 @@ window.baixarDossierAtual = function() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
-};
 
 window.closeDossierModal = function() {
   document.getElementById('modalDossier').classList.add('hidden');
