@@ -173,4 +173,18 @@ pregaoTesteMD.scoreComportamental = parsedIA.score;
 const mComScore = calculateMetrics([pregaoTesteMD]);
 console.log("Média de Score:", mComScore.mediaScoreComportamental, "(Esperado: 9.5)");
 
+// Teste 12: Parser de CSV moderno do Profit (com ano abreviado, Qtd C/V e P&L em R$)
+const csvModernoProfit = `"Ativo";"Status";"Abertura";"Fechamento";"Duração";"Qtd C";"Qtd V";"Preço C";"Preço V";"P&L Intervalo";"P&L Operação";"P&L Total"
+"WINZ26";"Vencedora";"18/11 10:30:07";"18/11 10:30";"35s";"2";"2";"170.820";"170.845";"0.01 | R$ 8,53";"0.01 | R$ 8,53";"R$ 8,53"
+"WINZ26";"Perdedora";"18/11 09:54:39";"18/11 10:05";"10m 30s";"5";"5";"170.714";"170.550";"-0.1 | -R$ 167,68";"-0.1 | -R$ 167,68";"R$ -167,68"`;
+const parsedModerno = parseProfitCSV(csvModernoProfit);
+console.log("\n=== TESTE 12: PARSER DE CSV NOVO DO PROFIT (ANO ABREVIADO & R$) ===");
+console.log("Pregões parsed:", parsedModerno?.pregoes?.length, "Esperado: 1");
+console.log("Data extraída:", parsedModerno?.pregoes[0]?.data, "Esperado:", `${new Date().getFullYear()}-11-18`);
+console.log("Líquido extraído:", parsedModerno?.pregoes[0]?.resultadoLiquido, "Esperado: -159.15");
+console.log("Pontos extraídos:", parsedModerno?.pregoes[0]?.pontos, "Esperado: -139");
+if (parsedModerno?.pregoes?.length !== 1 || Math.abs(parsedModerno.pregoes[0].resultadoLiquido - (-159.15)) > 0.05) {
+  throw new Error("Falha no Teste 12: Parser de CSV moderno do Profit.");
+}
+
 console.log("\n>>> TODOS OS TESTES PASSARAM COM SUCESSO! <<<");

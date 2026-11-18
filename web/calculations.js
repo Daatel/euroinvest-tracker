@@ -300,40 +300,90 @@ export function parseProfitCSV(csvText) {
   if (lines.length < 2) return null;
 
   const delimiter = lines[0].includes(';') ? ';' : ',';
-  const header = lines[0].split(delimiter).map(h => h.trim());
-  
+  const header = lines[0].split(delimiter).map(h => h.replace(/["']/g, '').trim());
+
   const pnlIntervaloIndex = header.findIndex(h => h.includes('P&L Intervalo'));
   const pnlTotIndex = header.findIndex(h => h.includes('P&L Total'));
+  const pnlOpIndex = header.findIndex(h => h.includes('P&L Operação') || h.includes('P&L Operacao'));
   const aberturaIndex = header.findIndex(h => h.includes('Abertura'));
   const statusIndex = header.findIndex(h => h.includes('Status'));
-  const qtdIndex = header.findIndex(h => h.includes('Qtd Compra') || h.includes('Qtd Venda'));
+  const qtdIndex = header.findIndex(h => h.includes('Qtd C') || h.includes('Qtd Compra') || h.includes('Qtd V') || h.includes('Qtd Venda'));
+  const precoCIndex = header.findIndex(h => h.includes('Preço C') || h.includes('Preco C') || h.includes('Preço de Compra') || h.includes('Preco de Compra'));
+  const precoVIndex = header.findIndex(h => h.includes('Preço V') || h.includes('Preco V') || h.includes('Preço de Venda') || h.includes('Preco de Venda'));
 
-  const pnlIndex = pnlIntervaloIndex !== -1 ? pnlIntervaloIndex : pnlTotIndex;
+  const pnlIndex = pnlIntervaloIndex !== -1 ? pnlIntervaloIndex : (pnlTotIndex !== -1 ? pnlTotIndex : pnlOpIndex);
   if (aberturaIndex === -1 || pnlIndex === -1) return null;
+
+  function parseCurrencyVal(val) {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const isNegative = String(val).includes('-');
+    const clean = String(val).replace(/["'\s\u00A0R$]/g, '').replace(/-/g, '').replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(clean) || 0;
+    return isNegative ? -num : num;
+  }
+
+  function parsePriceVal(val) {
+    if (!val) return 0;
+    let s = String(val).replace(/["'\s\u00A0]/g, '');
+    if (s.includes(',')) {
+      s = s.split(',')[0].replace(/\./g, '');
+    } else if (s.includes('.')) {
+      s = s.replace(/\./g, '');
+    }
+    return parseFloat(s) || 0;
+  }
+
+  function parseDateIsoStr(aberturaRaw) {
+    if (!aberturaRaw) return null;
+    const clean = String(aberturaRaw).replace(/["']/g, '').trim();
+    const [d] = clean.split(' ');
+    if (!d || !d.includes('/')) return null;
+    const parts = d.split('/');
+    const dia = parts[0].padStart(2, '0');
+    const mes = parts[1].padStart(2, '0');
+    let ano = parts[2];
+    if (!ano) {
+      ano = new Date().getFullYear().toString();
+    } else if (ano.length === 2) {
+      ano = '20' + ano;
+    }
+    return `${ano}-${mes}-${dia}`;
+  }
 
   const trades = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(delimiter);
+    const cols = lines[i].split(delimiter).map(c => c.trim());
     if (cols.length < 4) continue;
-    const aberturaRaw = cols[aberturaIndex] || '';
-    const [d] = aberturaRaw.split(' ');
-    if (!d || !d.includes('/')) continue;
-    
-    const [dia, mes, ano] = d.split('/');
-    const dateIso = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    const dateIso = parseDateIsoStr(cols[aberturaIndex]);
+    if (!dateIso) continue;
 
-    const status = cols[statusIndex] || '';
-    const qtd = parseInt(cols[qtdIndex], 10) || 2;
+    const status = cols[statusIndex]?.replace(/["']/g, '') || '';
+    const qtd = parseInt(cols[qtdIndex]?.replace(/["']/g, ''), 10) || 2;
     const pnlRaw = cols[pnlIndex] || '0';
     let liquido = 0;
     let pontos = 0;
 
     if (pnlRaw.includes('|')) {
       const parts = pnlRaw.split('|');
-      liquido = parseFloat(parts[0].replace(/\./g, '').replace(',', '.').trim()) || 0;
-      pontos = parseFloat(parts[1].trim()) || 0;
+      if (parts[1].includes('R$')) {
+        // Formato novo do Profit: "0.01 | R$ 8,53"
+        liquido = parseCurrencyVal(parts[1]);
+      } else {
+        // Formato clássico do Profit: "98,53 | 250.0"
+        liquido = parseCurrencyVal(parts[0]);
+        pontos = parseFloat(parts[1].replace(/["']/g, '').trim()) || 0;
+      }
     } else {
-      liquido = parseFloat(pnlRaw.replace(/\./g, '').replace(',', '.').trim()) || 0;
+      liquido = parseCurrencyVal(pnlRaw);
+    }
+
+    if (pontos === 0 && precoCIndex !== -1 && precoVIndex !== -1) {
+      const pC = parsePriceVal(cols[precoCIndex]);
+      const pV = parsePriceVal(cols[precoVIndex]);
+      const diff = Math.abs(pV - pC);
+      const isLoss = status.toLowerCase().includes('perd');
+      pontos = isLoss ? -diff : diff;
     }
 
     const valorPontoWin = CONFIG.VALOR_POR_PONTO_WIN;

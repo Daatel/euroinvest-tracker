@@ -2,6 +2,17 @@
 
 ---
 
+## v2.2 — 2026-11-18 (Sessão: Parser Universal de CSV do Profit — Suporte a Datas Abreviadas e P&L em Moeda)
+
+### 🚀 Compatibilidade Ampla de Relatórios do Profit (`web/calculations.js`, `web/test_calculations.js`)
+- **Resolução de Datas Abreviadas na Coluna 'Abertura':** O Profit exporta datas sem o ano (ex: `"18/11 10:30:07"`). O parser agora autocompleta com o ano corrente (`2026`), eliminando falhas de chave de data inválida (`"undefined-11-18"`).
+- **Detecção Flexível de Colunas de Contratos:** Suporte automático para cabeçalhos com colunas abreviadas (`"Qtd C"`, `"Qtd V"`), mantendo retrocompatibilidade com `"Qtd Compra"` e `"Qtd Venda"`.
+- **Parser Financeiro Híbrido de P&L:** Suporte ao formato novo de células do Profit com prefixo `"R$"` (ex: `"0.01 | R$ 8,53"` e `"R$ -1,47"`), além do formato tradicional (`"98,53 | 250.0"`).
+- **Cálculo Automático de Pontos por Variação de Preço:** Quando o relatório omite a pontuação direta na coluna de P&L, os pontos são calculados com precisão a partir das colunas `"Preço C"` e `"Preço V"`, garantindo o cálculo fiel de pontos, bruto e taxas B3.
+- **12 Testes Unitários 100% Aprovados:** Inclusão de suíte de testes com os dados reais exportados pelo Profit no pregão de 18/11.
+
+---
+
 ## v2.1 — 2026-11-17 (Sessão: Matriz Objetiva de Pontuação Ponderada & Seletor de Escopo no Dossiê IA)
 
 ### 🚀 Auditoria Comportamental Determinística & Acessibilidade (`web/calculations.js`, `web/index.html`, `web/app.js`, `web/test_calculations.js`)
