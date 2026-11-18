@@ -750,7 +750,9 @@ function renderHistoryTable(m) {
         <td class="py-3 px-4 text-xs font-mono text-slate-300">
           <div class="flex items-center gap-1.5">
             <span>${formatDateBR(dia.data)}</span>
-            ${isConsolidado ? '<span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">Fechado</span>' : ''}
+            ${isConsolidado 
+              ? '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">Fechado</span>' 
+              : '<span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800/60" title="Pregão ativo hoje: dados sendo computados em tempo real, aberto para novas importações até 18h">Parcial (Em Aberto)</span>'}
           </div>
         </td>
         <td class="py-3 px-4 text-xs font-mono text-slate-400">${dia.tradesVencedores}W / ${dia.tradesPerdedores}L</td>
