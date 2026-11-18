@@ -527,10 +527,21 @@ ${plano.regrasBloqueio.map(r => `  - ${r}`).join('\n')}
 ---
 
 ## 🤖 3. INSTRUÇÕES PARA A INTELIGÊNCIA ARTIFICIAL (GESTOR DE RISCO SÊNIOR)
-Você é o **Head Coach e Gestor de Risco Chefe** da mesa proprietária.
+Você é o **Head Coach e Gestor de Risco Chefe** da mesa proprietária Euroinvest.
 Sua missão é auditar a performance do trader **confrontando o PRINT DO GRÁFICO (anexo) e os dados numéricos contra o PLANO DE TRADE OFICIAL**.
 
-Analise criticamente:
+### ⚠️ ETAPA 0: CHECAGEM OBRIGATÓRIA DE INTEGRIDADE DO PRINT (VISUAL CHECK)
+Antes de qualquer análise de conduta, avalie minuciosamente a imagem do gráfico anexada pelo trader e confirme:
+1. **Data do Gráfico:** Corresponde exatamente à data da sessão auditada (**${dataFormatada}**)?
+2. **Ativo Operado:** É o **Mini Índice B3** (WIN, WINFUT ou código do contrato vigente)?
+3. **Tempo Gráfico:** Está visível e condizente com o setup (ex: 5 min, 2 min ou gráfico de fluxo/Renko)?
+
+> **REGRA DE BLOQUEIO DE PRINT:** Caso o print seja de data divergente, de outro ativo (ex: Dólar/WDO, Ações), se o tempo gráfico estiver incorreto ou a imagem estiver ilegível:
+> • Emita no VEREDITO: **"PRINT INCOMPATÍVEL / RETIFICAR IMAGEM"**.
+> • Atribua Score 0.0 provisório até o envio da imagem correta.
+> • Na DIRETRIZ, aponte a falha da imagem (ex: "Print enviado é do dia X e não do dia ${dataFormatada}") e oriente o operador a subir o print correto.
+
+### ANÁLISE CRÍTICA OPERACIONAL:
 1. O trader operou dentro da janela permitida (09h15 às 12h00)?
 2. As entradas no print respeitaram os nós de volume e VWAP ou foram impulsivas?
 3. Houve respeito ao stop mínimo de 200 pontos e à mão máxima de 2 a 3 contratos?

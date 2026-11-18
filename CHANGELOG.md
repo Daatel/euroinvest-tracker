@@ -2,6 +2,20 @@
 
 ---
 
+## v2.0 — 2026-11-17 (Sessão: Validação Visual de Print no Dossiê IA, Remoção de Formulário Obsoleto e Tabela Full-Width)
+
+### 🚀 Layout Amplo & Rigor de Auditoria Visual (`web/calculations.js`, `web/index.html`, `web/app.js`, `web/test_calculations.js`)
+- **Checagem Obrigatória de Integridade do Print (Etapa 0 no MD):** Instrução imperativa para o Claude/Gemini inspecionar a imagem do gráfico antes de avaliar a sessão, validando:
+  1. *Data do gráfico* (deve coincidir exatamente com o dia do pregão auditado);
+  2. *Ativo operado* (deve ser estritamente Mini Índice B3 - WIN/WINFUT);
+  3. *Tempo gráfico* (visível e condizente com Price Action / VWAP, ex: 5 min, 2 min ou Renko).
+  - Caso haja divergência de dia, ativo trocado (ex: Dólar ou Ações) ou imagem ilegível, a IA emite o veredito `"PRINT INCOMPATÍVEL / RETIFICAR IMAGEM"` com score 0.0 provisório e diretriz orientando o trader a anexar o print correto.
+- **Remoção Completa do Formulário Manual "Lançamento do Pregão":** Eliminação do card redundante de preenchimento manual de 5 colunas que comprimia a interface. O fluxo passa a ser 100% orientado ao relatório CSV do Profit.
+- **Tabela de Histórico dos Pregões em Largura Total (Full Width):** Expansão da tabela de histórico para 100% da largura útil da tela (12 colunas), proporcionando visualização limpa, arejada e sem necessidade de rolagem lateral comprimida para todas as 12 métricas e ações.
+- **11 Testes Unitários 100% Aprovados:** Validação rigorosa dos cálculos, regras e integridade dos prompts.
+
+---
+
 ## v1.9 — 2026-11-17 (Sessão: Plano de Trade Oficial, Dossiê .MD de Auditoria IA e Score Comportamental)
 
 ### 🚀 Plano de Trade & Auditoria Comportamental com IA (`web/calculations.js`, `web/index.html`, `web/app.js`, `web/test_calculations.js`)

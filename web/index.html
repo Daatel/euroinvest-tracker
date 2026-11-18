@@ -374,157 +374,53 @@
       </div>
     </section>
 
-    <!-- Painel Duplo: Lançamento Diário & Histórico de Pregões -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-      <!-- Coluna Esquerda: Formulário de Lançamento (5 colunas no grid lg) -->
-      <section class="lg:col-span-5 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg flex flex-col justify-between">
+    <!-- Histórico dos Pregões da Avaliação (Largura Total 100%) -->
+    <section class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i>
-              Lançamento do Pregão
-            </h2>
-            <span class="text-xs text-slate-400">Relatório da Plataforma</span>
-          </div>
-
-          <form id="tradeForm" class="space-y-4">
-            
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Data do Pregão</label>
-                <input type="date" id="inputData" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Contratos (Mão Base)</label>
-                <input type="number" id="inputContratos" min="1" max="10" value="2" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Trades Win</label>
-                <input type="number" id="inputWins" min="0" value="0" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Trades Loss</label>
-                <input type="number" id="inputLosses" min="0" value="0" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Pontos WIN</label>
-                <input type="number" step="0.5" id="inputPontos" value="0" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Resultado Bruto (R$)</label>
-                <input type="number" step="0.01" id="inputBruto" value="0.00" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Taxas / B3 (R$)</label>
-                <input type="number" step="0.01" min="0" id="inputTaxas" value="0.00" required class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 font-mono">
-              </div>
-            </div>
-
-            <!-- Preview do Líquido e Alerta de Assimetria -->
-            <div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700 flex items-center justify-between">
-              <span class="text-xs text-slate-400">Resultado Líquido do Dia:</span>
-              <span id="inputLiquidoPreview" class="text-sm font-bold font-mono text-emerald-400">R$ 0,00</span>
-            </div>
-
-            <div id="assimetriaWarning" class="hidden p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-[11px] text-amber-300 flex items-start gap-2">
-              <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5"></i>
-              <div>
-                <strong>Aviso de Assimetria de Lote:</strong> O cálculo de <em>Pontos × R$ 0,20 × Contratos</em> diverge do Bruto informado. Indica entradas fracionadas ou médio contra o preço.
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[11px] font-medium text-slate-400 mb-1">Horário Operado</label>
-                <div class="flex items-center gap-1.5">
-                  <input type="time" id="inputHorarioInicio" value="09:05" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
-                  <span class="text-slate-500">às</span>
-                  <input type="time" id="inputHorarioFim" value="11:30" class="w-full px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
-                </div>
-              </div>
-              <div>
-                <label class="block text-[11px] font-medium text-slate-400 mb-1">Setup Utilizado</label>
-                <input type="text" id="inputSetup" value="VWAP + Volume Profile" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-[11px] font-medium text-slate-400 mb-1">Arquivo do Print do Dia (Salvo na pasta prints/)</label>
-              <input type="text" id="inputPrintFile" placeholder="ex: pregao_2026-11-14.png" class="w-full px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white font-mono">
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Notas da Sessão & Leitura Estratégica</label>
-              <textarea id="inputAnalise" rows="3" placeholder="Contexto do dia, leitura de consolidações, absorção de stops e lições..." class="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500 leading-relaxed"></textarea>
-            </div>
-
-            <div class="flex items-center gap-2 pt-2">
-              <button type="submit" id="btnSubmitForm" class="flex-1 py-2.5 px-4 rounded-xl font-medium text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-950/40">
-                Salvar Pregão
-              </button>
-              <button type="button" id="btnCancelEdit" onclick="window.cancelEdit()" class="hidden py-2.5 px-4 rounded-xl font-medium text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors">
-                Cancelar
-              </button>
-            </div>
-
-          </form>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-sky-400"></i>
+            Histórico dos Pregões da Avaliação
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Clique em <strong>#</strong> para Parecer Operacional ou em <strong>[ 🤖 Auditar ]</strong> para submeter o dossiê à IA</p>
         </div>
-      </section>
-
-      <!-- Coluna Direita: Histórico dos Pregões (7 colunas no grid lg) -->
-      <section class="lg:col-span-7 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <i data-lucide="history" class="w-4 h-4 text-sky-400"></i>
-              Histórico dos Pregões da Avaliação
-            </h2>
-            <span class="text-xs text-slate-400">Clique em # para Parecer do Coach</span>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                  <th class="py-2.5 px-4">Coach</th>
-                  <th class="py-2.5 px-4">Data</th>
-                  <th class="py-2.5 px-4">W / L</th>
-                  <th class="py-2.5 px-4">Mão</th>
-                  <th class="py-2.5 px-4">Pontos</th>
-                  <th class="py-2.5 px-4">Bruto</th>
-                  <th class="py-2.5 px-3">Taxas</th>
-                  <th class="py-2.5 px-3">Líquido</th>
-                  <th class="py-2.5 px-3">Score IA</th>
-                  <th class="py-2.5 px-3">Acumulado</th>
-                  <th class="py-2.5 px-4">% Pos</th>
-                  <th class="py-2.5 px-4 text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="historyTableBody">
-                <!-- Inserido dinamicamente via JS -->
-              </tbody>
-            </table>
-          </div>
+        <div class="flex items-center gap-2">
+          <button onclick="window.openModalImportCsv()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-sky-950/70 hover:bg-sky-900/80 text-sky-300 border border-sky-700 transition-colors shadow-sm" title="Importar relatório de operações do Profit (CSV)">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-sky-400"></i>
+            <span>Importar CSV do Profit</span>
+          </button>
         </div>
+      </div>
 
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500">
-          <div>* Excedente diário acima de R$ 700,00 é limitado no saldo apurado conforme regulamento.</div>
-          <div>Mesa Euroinvest • Mini Índice WIN</div>
-        </div>
-      </section>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+              <th class="py-3 px-4">Coach</th>
+              <th class="py-3 px-4">Data</th>
+              <th class="py-3 px-4">W / L</th>
+              <th class="py-3 px-4">Mão</th>
+              <th class="py-3 px-4">Pontos</th>
+              <th class="py-3 px-4">Bruto</th>
+              <th class="py-3 px-4">Taxas</th>
+              <th class="py-3 px-4">Líquido</th>
+              <th class="py-3 px-4 text-center">Score IA</th>
+              <th class="py-3 px-4">Acumulado</th>
+              <th class="py-3 px-4">% Pos</th>
+              <th class="py-3 px-4 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- Inserido dinamicamente via JS -->
+          </tbody>
+        </table>
+      </div>
 
-    </div>
+      <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500">
+        <div>* Excedente diário acima de R$ 700,00 é limitado no saldo apurado conforme regulamento de consistência.</div>
+        <div>Mesa Euroinvest • Mini Índice WIN</div>
+      </div>
+    </section>
 
   </div>
 

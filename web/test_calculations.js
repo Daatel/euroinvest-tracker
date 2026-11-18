@@ -132,6 +132,7 @@ const pregaoTesteMD = {
 const mdOutput = gerarPromptAuditoriaMD(pregaoTesteMD);
 console.log("MD gerado contém Plano de Trade?", mdOutput.includes("PLANO DE TRADE OFICIAL"), "(Esperado: true)");
 console.log("MD gerado contém R$ 320,18?", mdOutput.includes("320,18"), "(Esperado: true)");
+console.log("MD gerado contém checagem obrigatória do print?", mdOutput.includes("CHECAGEM OBRIGATÓRIA DE INTEGRIDADE DO PRINT"), "(Esperado: true)");
 
 console.log("\n=== TESTE 11: PARSER DE RETORNO DA IA E SCORE COMPORTAMENTAL ===");
 const respostaExemploIA = `

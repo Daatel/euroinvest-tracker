@@ -774,10 +774,7 @@ function renderHistoryTable(m) {
                 <i data-lucide="lock" class="w-4 h-4 text-slate-500"></i>
               </span>
             ` : `
-              <button onclick="window.editPregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-sky-300" title="Editar">
-                <i data-lucide="edit-2" class="w-4 h-4"></i>
-              </button>
-              <button onclick="window.deletePregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-red-400" title="Excluir">
+              <button onclick="window.deletePregao('${dia.id}')" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-red-400" title="Excluir pregão em aberto">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             `}
@@ -814,31 +811,34 @@ function setupEventListeners() {
   const inputBruto = document.getElementById('inputBruto');
   const inputTaxas = document.getElementById('inputTaxas');
 
-  const updateFormCalculations = () => {
-    const bruto = parseFloat(inputBruto.value) || 0;
-    const taxas = parseFloat(inputTaxas.value) || 0;
-    const liquido = bruto - taxas;
+  if (inputBruto && inputTaxas && inputPontos && inputContratos) {
+    const updateFormCalculations = () => {
+      const bruto = parseFloat(inputBruto.value) || 0;
+      const taxas = parseFloat(inputTaxas.value) || 0;
+      const liquido = bruto - taxas;
 
-    document.getElementById('inputLiquidoPreview').textContent = formatCurrency(liquido, true);
+      const preview = document.getElementById('inputLiquidoPreview');
+      if (preview) preview.textContent = formatCurrency(liquido, true);
 
-    const pontos = parseFloat(inputPontos.value) || 0;
-    const contratos = parseInt(inputContratos.value) || 2;
-    const valorPonto = appData.meta?.valorPorPontoContrato || CONFIG.VALOR_POR_PONTO_WIN;
-    const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto, valorPonto);
+      const pontos = parseFloat(inputPontos.value) || 0;
+      const contratos = parseInt(inputContratos.value) || 2;
+      const valorPonto = appData.meta?.valorPorPontoContrato || CONFIG.VALOR_POR_PONTO_WIN;
+      const hasAssimetria = checkAssimetriaLote(pontos, contratos, bruto, valorPonto);
 
-    const warningEl = document.getElementById('assimetriaWarning');
-    if (warningEl) {
-      if (hasAssimetria && (pontos !== 0 || bruto !== 0)) {
-        warningEl.classList.remove('hidden');
-      } else {
-        warningEl.classList.add('hidden');
+      const warningEl = document.getElementById('assimetriaWarning');
+      if (warningEl) {
+        if (hasAssimetria && (pontos !== 0 || bruto !== 0)) {
+          warningEl.classList.remove('hidden');
+        } else {
+          warningEl.classList.add('hidden');
+        }
       }
-    }
-  };
+    };
 
-  [inputPontos, inputContratos, inputBruto, inputTaxas].forEach(inp => {
-    if (inp) inp.addEventListener('input', updateFormCalculations);
-  });
+    [inputPontos, inputContratos, inputBruto, inputTaxas].forEach(inp => {
+      if (inp) inp.addEventListener('input', updateFormCalculations);
+    });
+  }
 
   const form = document.getElementById('tradeForm');
   if (form) {
@@ -1138,36 +1138,23 @@ window.editPregao = function(id) {
     return;
   }
 
+  const inputData = document.getElementById('inputData');
+  if (!inputData) return;
+
   editingPregaoId = id;
-  document.getElementById('inputData').value = dia.data;
-  document.getElementById('inputContratos').value = dia.contratos || 2;
-  document.getElementById('inputWins').value = dia.tradesVencedores || 0;
-  document.getElementById('inputLosses').value = dia.tradesPerdedores || 0;
-  document.getElementById('inputPontos').value = dia.pontos || 0;
-  document.getElementById('inputBruto').value = dia.resultadoBruto || 0;
-  document.getElementById('inputTaxas').value = dia.taxas || 0;
-  document.getElementById('inputHorarioInicio').value = dia.horarioInicio || '';
-  document.getElementById('inputHorarioFim').value = dia.horarioFim || '';
-  document.getElementById('inputSetup').value = dia.setup || '';
-  document.getElementById('inputPrintFile').value = dia.printFile || '';
-  document.getElementById('inputAnalise').value = dia.analiseEstrategica || '';
-
-  document.getElementById('btnSubmitForm').textContent = 'Atualizar Pregão';
-  document.getElementById('btnCancelEdit').classList.remove('hidden');
-
-  document.getElementById('inputBruto').dispatchEvent(new Event('input'));
-  window.scrollTo({ top: document.getElementById('tradeForm').offsetTop - 80, behavior: 'smooth' });
+  inputData.value = dia.data;
+  document.getElementById('inputContratos')?.setAttribute('value', dia.contratos || 2);
+  document.getElementById('inputWins')?.setAttribute('value', dia.tradesVencedores || 0);
+  document.getElementById('inputLosses')?.setAttribute('value', dia.tradesPerdedores || 0);
+  document.getElementById('inputPontos')?.setAttribute('value', dia.pontos || 0);
+  document.getElementById('inputBruto')?.setAttribute('value', dia.resultadoBruto || 0);
+  document.getElementById('inputTaxas')?.setAttribute('value', dia.taxas || 0);
 };
 
 window.cancelEdit = function() {
   editingPregaoId = null;
-  document.getElementById('tradeForm').reset();
-  document.getElementById('inputData').value = new Date().toISOString().split('T')[0];
-  document.getElementById('inputContratos').value = '2';
-  document.getElementById('btnSubmitForm').textContent = 'Salvar Pregão';
-  document.getElementById('btnCancelEdit').classList.add('hidden');
-  document.getElementById('inputLiquidoPreview').textContent = 'R$ 0,00';
-  document.getElementById('assimetriaWarning').classList.add('hidden');
+  const form = document.getElementById('tradeForm');
+  if (form) form.reset();
 };
 
 window.deletePregao = function(id) {
