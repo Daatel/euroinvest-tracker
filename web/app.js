@@ -475,7 +475,6 @@ window.atualizarParametrosRisco = function() {
   saveData();
   renderApp();
 };
-};
 
 /**
  * Renderiza o cabeçalho e status geral
