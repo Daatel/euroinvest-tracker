@@ -1,0 +1,18 @@
+Novo critério a adicionar na regra de trade. Ao inves do horário simples de meio dia, usar ATR 14 no 5M abaixo de 250 pontos é sinal de mercado travado para você no WIN. 
+
+Todo dia o mercado se comporta da mesma maneira, abre, aumenta a volatilidade até próximo de meio dia e depois vai caindo até morrer.
+
+Essa leitura reflete exatamente a curva intradiária de liquidez da B3, que segue uma dinâmica muito previsível na maioria dos pregões.
+
+A anatomia da volatilidade no WIN
+
+• 09h00 às 10h00 (Abertura do Futuro): O mercado ajusta os preços externos (ADR, S&P 500, Ásia e Europa). O volume entra forte e o ATR costuma dar o primeiro salto.
+• 10h00 às 11h30 (Abertura à Vista e NYSE): Com a abertura das ações na B3 às 10h e do mercado americano às 10h30 (ou 11h30, dependendo do horário de verão nos EUA), entra o fluxo institucional pesado. É o pico diário de amplitude, onde o ATR(14) no 5M facilmente passa dos 250 pontos.
+• 12h00 às 14h00 (Almoço Institucional): Os grandes players reduzem a atuação. O volume seca, os spreads aumentam e o indicador desaba, gerando rompimentos falsos.
+• 14h00 às 16h30 (Tarde): Pode haver um repique de volatilidade se sair alguma notícia macroeconômica ou fala do Fed, mas raramente sustenta a mesma amplitude da manhã.
+• Após 16h30 (Reta Final): Os institucionais zeram posições e o mercado entra no modo "piloto automático" até o ajuste às 17h e o fechamento.
+
+Como usar esse padrão a seu favor:
+
+• Concentre suas operações na janela da manhã: Se o seu operacional exige ATR acima de 250 pontos, sua janela de trabalho real está concentrada entre 09h15 e 12h00.
+• Encerre o dia quando a régua cair: Se bateu meio-dia e o ATR perdeu os 250 pontos, considere encerrar a plataforma. Operar à tarde contra a queda natural de volatilidade costuma devolver o lucro da manhã.

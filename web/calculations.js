@@ -585,20 +585,21 @@ export function calculateRiskTiers(capitalPerda = 2835, riscoPercentual = 5, val
  */
 export const PLANO_DE_TRADE_PADRAO = {
   setup: "Price Action ancorado em VWAP e Volume Profile (POC, VAH, VAL, nós HVN/LVN)",
-  janelaOperacional: "09h15 às 12h00 (aguardar 2 a 3 min no leilão das 10h00; proibido operar após as 12h00)",
+  janelaOperacional: "09h15 até ATR(14)/5M cair abaixo de 250 pontos (aguardar 2 a 3 min no leilão das 10h00). Critério soberano: ATR mede liquidez diretamente — substitui a referência horária das 12h00",
   alvoPadraoPontos: 200,
   stopMinimoPontos: 200,
   maoBaseContratos: 2,
   maoMaximaContratos: 3,
   disjuntorGainDia: "R$ 150 a R$ 350 (desligar tela para proteger dia positivo)",
-  disjuntorLossDia: "R$ 150 a R$ 240 (desligar tela para proteger o drawdown)",
+  disjuntorLossDia: "Equivalente ao teto de Risco/Trade do painel (% da Margem Livre = Saldo Acumulado + Piso). Desligar a tela imediatamente ao atingir o limite.",
   regrasBloqueio: [
     "Proibido preço médio contra rompimento de estrutura com volume",
-    "Proibido operar após as 12h00 (mercado vespertino de baixo volume)",
+    "Proibido operar com ATR(14)/5M abaixo de 250 pontos (mercado travado — critério soberano que substitui a referência das 12h00)",
     "Proibido scalping curto menor que 20 pontos (infração B3/Euroinvest)",
     "Proibido reentrada imediata no mesmo minuto de um stop técnico"
   ]
 };
+
 
 /**
  * Gera o documento Markdown estruturado de auditoria do pregão para ser submetido à IA
@@ -665,10 +666,10 @@ Antes de qualquer análise de conduta, avalie minuciosamente a imagem do gráfic
 A avaliação parte de **Base 10.0 pontos**. Aplique as deduções matemáticas exatas abaixo para garantir que a nota seja 100% reproduzível:
 
 1. **Janela Operacional (Peso Máximo: 2.5 pts):**
-   - 100% das operações entre 09h15 e 12h00: Dedução 0.0.
+   - Todas as operações com ATR(14)/5M ≥ 250 pts, respeitando o leilão das 10h00: Dedução 0.0.
    - Operou durante o leilão das 10h00 sem esperar 2 a 3 minutos: Dedução -0.5 pt.
-   - Operou após as 12h00 (turno da tarde): Dedução -2.0 pts.
-   - Sessão iniciada fora do turno matinal: Dedução -2.5 pts (perda total da dimensão).
+   - Operou com ATR(14)/5M < 250 pts (mercado travado, independente do horário): Dedução -2.0 pts.
+   - Sessão iniciada com ATR travado desde a abertura (ausência total do critério): Dedução -2.5 pts (perda total da dimensão).
 
 2. **Lote & Simetria Operacional (Peso Máximo: 2.5 pts):**
    - 100% na mão base de 2 contratos (ou até 3 contratos dentro do risco): Dedução 0.0.
@@ -681,11 +682,11 @@ A avaliação parte de **Base 10.0 pontos**. Aplique as deduções matemáticas 
    - Fez preço médio contra o movimento / aumentou posição em loss: Dedução -2.5 pts (perda total da dimensão).
 
 4. **Disjuntores Diários & Overtrading (Peso Máximo: 2.5 pts):**
-   - Parou no disjuntor (+R$ 150/+350 ou -R$ 150/-240) e desligou a plataforma: Dedução 0.0.
+   - Parou ao atingir a faixa do disjuntor (ganho ou perda conforme painel de risco) e desligou a plataforma: Dedução 0.0.
    - Continuou operando após disjuntor de gain ou loss (overtrading): Dedução -1.5 pt.
    - Recuperou prejuízo para o zero e continuou operando, devolvendo capital: Dedução -1.0 pt.
 
-> **TRAVA CRÍTICA DE INDISCIPLINA (FAIL-SAFE):** Se ocorrerem duas infrações graves simultâneas (ex: preço médio + operação no período da tarde), o Score Final é obrigatoriamente limitado ao teto máximo de **2.0**, independentemente das demais dimensões.
+> **TRAVA CRÍTICA DE INDISCIPLINA (FAIL-SAFE):** Se ocorrerem duas infrações graves simultâneas (ex: preço médio contra rompimento + operação com ATR(14)/5M < 250 pts, ou ultrapassagem do teto de contratos + estouro do stop financeiro da Margem Livre), o Score Final é obrigatoriamente limitado ao teto máximo de **2.0**, independentemente das demais dimensões.
 
 ### FORMATO DE RESPOSTA OBRIGATÓRIO (RIGOROSO):
 Responda OBRIGATORIAMENTE no seguinte padrão estruturado para leitura do terminal:

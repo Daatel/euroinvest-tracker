@@ -378,7 +378,7 @@ function renderApp() {
   const metrics = calculateMetrics(appData.pregoes, appData.meta || {}, appData.diasSemOperacao || []);
 
   renderHeaderStatus(metrics);
-  renderGestaoRisco();
+  renderGestaoRisco(metrics);
   renderKPICards(metrics);
   renderDiagnosticBanner(metrics);
   renderChart(metrics);
@@ -388,7 +388,7 @@ function renderApp() {
 /**
  * Renderiza o bloco de Gestão Estratégica de Risco (Risco Máximo por Trade & Régua de Pontos)
  */
-function renderGestaoRisco() {
+function renderGestaoRisco(metrics) {
   const container = document.getElementById('reguaContratosGrid');
   if (!container) return;
 
@@ -397,19 +397,30 @@ function renderGestaoRisco() {
   const pisoDrawdown = appData.meta?.pisoDrawdown || CONFIG.PISO_DRAWDOWN;
   const valorPonto = appData.meta?.valorPorPontoContrato || CONFIG.VALOR_POR_PONTO_WIN;
 
-  const riskData = calculateRiskTiers(pisoDrawdown, pct, valorPonto);
+  // Margem Livre dinâmica = Saldo Acumulado + |Piso| (cresce com lucros, encolhe com perdas)
+  const margemLivre = metrics?.margemLivrePiso ?? Number((((appData.pregoes || []).reduce((sum, p) => sum + (p.resultadoLiquido || 0), 0)) - pisoDrawdown).toFixed(2));
+
+  const riskData = calculateRiskTiers(margemLivre, pct, valorPonto);
 
   const elFin = document.getElementById('riscoFinanceiroTexto');
   if (elFin) elFin.textContent = formatCurrency(riskData.riscoFinanceiro);
 
   const elBadge = document.getElementById('riscoPercentualBadge');
-  if (elBadge) elBadge.textContent = `${riskData.riscoPercentual.toFixed(1)}% do Piso`;
+  if (elBadge) elBadge.textContent = `${riskData.riscoPercentual.toFixed(1)}% da Margem Livre`;
 
   const elPontos = document.getElementById('riscoPontosGlobais');
   if (elPontos) elPontos.textContent = `${riskData.pontosGlobais} pontos`;
 
   const selPct = document.getElementById('selectRiscoPercentual');
-  if (selPct) selPct.value = String(pct);
+  if (selPct) {
+    const percentages = [2, 3, 4, 5, 6];
+    selPct.innerHTML = percentages.map(p => {
+      const valor = ((margemLivre * p) / 100);
+      const isSel = Math.round(pct) === p ? 'selected' : '';
+      return `<option value="${p}" ${isSel}>${p.toFixed(1)}% (${formatCurrency(valor)})</option>`;
+    }).join('');
+    selPct.value = String(pct);
+  }
 
   const selMao = document.getElementById('selectMaoBase');
   if (selMao) selMao.value = String(maoBase);
@@ -462,7 +473,8 @@ window.atualizarParametrosRisco = function() {
   appData.meta.maoBaseContratos = parseInt(selMao.value, 10) || 2;
 
   saveData();
-  renderGestaoRisco();
+  renderApp();
+};
 };
 
 /**
@@ -1060,8 +1072,9 @@ function gerarParecerOperacional(d) {
   if (totalTrades > 6) {
     erros.push(`Excesso de operações (${totalTrades} trades no pregão), aumentando custos de emolumentos e exposição a risco.`);
   }
+  // Critério ATR: encerrar quando ATR(14)/5M < 250 pts (substitui a referência horária fixa das 12h00)
   if (d.horarioFim && d.horarioFim > "12:00") {
-    erros.push(`Operações estendidas até ${d.horarioFim}, além do limite recomendado da janela matinal.`);
+    erros.push(`Operações estendidas até ${d.horarioFim}. Verificar se ATR(14)/5M estava acima de 250 pts — esse é o critério soberano de encerramento. Operar com ATR < 250 pts equivale a infração da janela operacional.`);
   }
   if (isLoss && acertos.length === 0) {
     acertos.push("Execução dos stops conforme parâmetros de risco definidos para a sessão.");

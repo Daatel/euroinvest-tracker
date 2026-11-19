@@ -1,6 +1,27 @@
 # 📋 Histórico de Versões — Terminal de Avaliação Euroinvest (Plano Junior)
 
 ---
+## Na primeira vez que vir essa observação que estou inserindo aqui manualmente (18/11/2026), atualize o plano de trade com a seguinte diretriz: 
+Aom invés de usar o meio dia como fechamento de janela de operação, usar o Indicador ATR(14) no 5M abaixo de 250 pontos como sinal de mercado travado para no WIN. Todo dia o mercado se comporta da mesma maneira, abre e segue aumentando a volatilidade até próximo de meio dia e depois vai caindo até ficar sem liquidez e muito lento, porém imprevisível. Essa é a curva intradiária de liquidez da B3, que segue essa dinâmica consistente na quase totalidade dos pregões.
+A anatomia da volatilidade no WIN
+• 09h00 às 10h00 (Abertura do Futuro): O mercado ajusta os preços externos (ADR, S&P 500, Ásia e Europa). O volume entra forte e o ATR costuma dar o primeiro salto.
+• 10h00 às 11h30 (Abertura à Vista e NYSE): Com a abertura das ações na B3 às 10h e do mercado americano às 10h30 (ou 11h30, dependendo do horário de verão nos EUA), entra o fluxo institucional pesado. É o pico diário de amplitude, onde o ATR(14) no 5M facilmente passa dos 250 pontos.
+• 12h00 às 14h00 (Almoço Institucional): Os grandes players reduzem a atuação. O volume seca, os spreads aumentam e o indicador desaba, gerando rompimentos falsos.
+• 14h00 às 16h30 (Tarde): Pode haver um repique de volatilidade se sair alguma notícia macroeconômica ou fala do Fed, mas raramente sustenta a mesma amplitude da manhã.
+• Após 16h30 (Reta Final): Os institucionais zeram posições e o mercado entra no modo "piloto automático" até o ajuste às 17h e o fechamento.
+Todo dia o mercado se comporta da mesma maneira, abre, aumenta a volatilidade até próximo de meio dia e depois vai caindo até morrer.
+
+
+
+## v2.3 — 2026-11-19 (Sessão: Gestão Dinâmica por Margem Livre & Critério Soberano ATR)
+
+### 🛡️ Gestão de Risco Adaptativa & Auditoria por ATR (`web/calculations.js`, `web/index.html`, `web/app.js`, `plano_de_trade_oficial_atualizado.md`)
+- **Risco Dinâmico Ancorado na Margem Livre (Saldo + Piso):** O dimensionamento de risco por operação deixa de ser estático sobre o piso e passa a calcular sobre a Margem Livre total (`Saldo Acumulado + Piso de R$ 2.835`). Com saldo em alta, a capacidade operacional cresce proporcionalmente sem risco de ruína; com saldo em baixa, a régua de stop e lotes contrai automaticamente.
+- **Atualização Dinâmica dos Controles de Tela:** O seletor `[ Risco / Trade ]` agora recalcula em tempo real os valores em reais de cada patamar percentual (2% a 6%) sobre a margem livre atual do operador.
+- **Régua de Contratos e Capacidade Global em Tempo Real:** Capacidade global em pontos e stops por contrato (2 cts, 3 cts, 4 cts e 6 cts) passam a ser alimentados diretamente pelo `metrics.margemLivrePiso`.
+- **Critério Soberano de Volatilidade ATR(14) no 5M < 250 pts:** Substituição da regra horária estática das 12h00 pelo gatilho dinâmico de ATR(14) no 5M abaixo de 250 pontos em toda a aplicação (Plano Oficial, Matriz Ponderada de Pontuação, Rubric do Dossiê IA e Alertas do Coach).
+
+---
 
 ## v2.2 — 2026-11-18 (Sessão: Parser Universal Multiplataforma — Suporte a Rocket Trader, Profit e Nelogica)
 
