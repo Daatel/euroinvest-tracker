@@ -13,6 +13,16 @@ Todo dia o mercado se comporta da mesma maneira, abre, aumenta a volatilidade at
 
 
 
+## v2.4 — 2026-11-19 (Sessão: Blindagem Definitiva do Histórico e Deep Merge Imutável no CSV)
+
+### 🛡️ Integridade Canônica & Purga de Registros Fantasmas (`web/calculations.js`, `web/index.html`, `web/app.js`)
+- **Blindagem do Importador CSV (Deep Merge Imutável):** Ao importar relatórios do Profit/Rocket Trader, a aplicação agora preserva estritamente todos os campos analíticos já existentes (`scoreComportamental`, `parecerCoach`, `analiseEstrategica` e `printFile`), impedindo que novas importações apaguem auditorias anteriores.
+- **Validador Rígido de Datas no Parser CSV:** O parser agora valida rigorosamente dias (01-31), meses (01-12) e anos legítimos, descartando automaticamente linhas de cabeçalho, totalizadores ou resumos do relatório, eliminando a ocorrência de datas zeradas como `00/00/2026`.
+- **Reconciliação e Restauração Automática de Scores:** No carregamento da aplicação (`loadData`), pregões canônicos com auditorias oficiais (12/11 com Score 5.5, 13/11 com Score 9.5 e 19/11 com Score 9.5) são reconciliados e restaurados caso o armazenamento local do navegador tenha sido limpo ou corrompido.
+- **Purga Ativa de Registros Anômalos:** Eliminação automática de registros corrompidos com data inválida (`00-00`), restabelecendo o saldo real autêntico e a numeração cronológica correta dos 6 pregões da avaliação.
+
+---
+
 ## v2.3 — 2026-11-19 (Sessão: Gestão Dinâmica por Margem Livre & Critério Soberano ATR)
 
 ### 🛡️ Gestão de Risco Adaptativa & Auditoria por ATR (`web/calculations.js`, `web/index.html`, `web/app.js`, `plano_de_trade_oficial_atualizado.md`)

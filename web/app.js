@@ -247,18 +247,19 @@ const AUDITED_INITIAL_PREGOES = [
     data: "2026-11-16",
     contratos: 2,
     tradesVencedores: 1,
-    tradesPerdedores: 1,
-    tradesTotal: 2,
-    pontos: -0.1,
-    resultadoBruto: -0.05,
-    taxas: 83.89,
-    resultadoLiquido: -83.94,
-    saldoApuradoDia: -83.94,
+    tradesPerdedores: 2,
+    tradesTotal: 3,
+    pontos: -407.5,
+    resultadoBruto: -163.00,
+    taxas: 4.41,
+    resultadoLiquido: -167.41,
+    saldoApuradoDia: -167.41,
     horarioInicio: "09:15",
     horarioFim: "11:30",
     setup: "VWAP e Volume Profile",
     assimetriaLote: false,
     consolidado: true,
+    scoreComportamental: null,
     analiseEstrategica: "Pregão de controle com encerramento contido e proteção da conta.",
     parecerCoach: null
   },
@@ -279,6 +280,7 @@ const AUDITED_INITIAL_PREGOES = [
     setup: "VWAP e Volume Profile",
     assimetriaLote: false,
     consolidado: true,
+    scoreComportamental: null,
     analiseEstrategica: "Sessão consistente com 7 vitórias e saldo positivo expressivo (+R$ 251,33).",
     parecerCoach: null
   },
@@ -298,8 +300,30 @@ const AUDITED_INITIAL_PREGOES = [
     horarioFim: "10:30",
     setup: "VWAP e Volume Profile (Rocket Trader)",
     assimetriaLote: false,
-    consolidado: false,
+    consolidado: true,
+    scoreComportamental: null,
     analiseEstrategica: "Excelente sessão matinal da Rocket Trader: 11 vitórias em 15 trades (+73,3% de acerto), saldo líquido de +R$ 292,91 e +945 pontos conquistados.",
+    parecerCoach: null
+  },
+  {
+    id: "pregao-2026-11-19",
+    data: "2026-11-19",
+    contratos: 10,
+    tradesVencedores: 6,
+    tradesPerdedores: 3,
+    tradesTotal: 9,
+    pontos: 10.2,
+    resultadoBruto: 4.18,
+    taxas: 49.86,
+    resultadoLiquido: 298.54,
+    saldoApuradoDia: 298.54,
+    horarioInicio: "09:15",
+    horarioFim: "11:30",
+    setup: "VWAP e Volume Profile",
+    assimetriaLote: false,
+    consolidado: false,
+    scoreComportamental: 9.5,
+    analiseEstrategica: "Sessão em andamento com alta assertividade (6W / 3L), respeitando o plano de trade oficial.",
     parecerCoach: null
   }
 ];
@@ -330,14 +354,28 @@ function loadData() {
           appData.planoTrade = { ...PLANO_DE_TRADE_PADRAO };
         }
 
-        // Remove registros corrompidos ou com data inválida
-        appData.pregoes = appData.pregoes.filter(p => p && p.data && !p.data.includes('undefined') && p.data.length >= 8);
+        // Remove registros corrompidos, fantasmas (ex: 00/00) ou com data inválida
+        appData.pregoes = appData.pregoes.filter(p => {
+          if (!p || !p.data || typeof p.data !== 'string') return false;
+          if (p.data.includes('00-00') || p.data.includes('undefined') || p.data.includes('0000')) return false;
+          return /^\d{4}-\d{2}-\d{2}$/.test(p.data);
+        });
 
-        // Garante que os pregões auditados oficiais estejam presentes (recuperação automática de histórico)
-        const datasPresentes = new Set(appData.pregoes.map(p => p.data));
+        // Reconcilia os pregões auditados oficiais: restaura scores e pareceres se perdidos
         for (const aud of AUDITED_INITIAL_PREGOES) {
-          if (!datasPresentes.has(aud.data)) {
-            appData.pregoes.push(aud);
+          const idx = appData.pregoes.findIndex(p => p.data === aud.data);
+          if (idx !== -1) {
+            // Se o pregão existe no storage mas perdeu o score canônico, restaura
+            if (aud.scoreComportamental !== null && aud.scoreComportamental !== undefined) {
+              if (appData.pregoes[idx].scoreComportamental === null || appData.pregoes[idx].scoreComportamental === undefined) {
+                appData.pregoes[idx].scoreComportamental = aud.scoreComportamental;
+              }
+            }
+            if (aud.parecerCoach && !appData.pregoes[idx].parecerCoach) {
+              appData.pregoes[idx].parecerCoach = aud.parecerCoach;
+            }
+          } else {
+            appData.pregoes.push(JSON.parse(JSON.stringify(aud)));
           }
         }
 
@@ -1576,7 +1614,7 @@ window.confirmarImportacaoCsv = function() {
       if (estaBloqueado) {
         consolidadosBloqueados++;
       } else {
-        // Atualiza pregão existente
+        // Atualiza pregão existente preservando auditorias, pareceres e anotações
         mapaPregoes.set(imp.data, {
           ...existente,
           contratos: imp.contratos,
@@ -1586,6 +1624,10 @@ window.confirmarImportacaoCsv = function() {
           resultadoBruto: imp.resultadoBruto,
           taxas: imp.taxas,
           resultadoLiquido: imp.resultadoLiquido,
+          scoreComportamental: (existente.scoreComportamental !== undefined && existente.scoreComportamental !== null) ? existente.scoreComportamental : (imp.scoreComportamental ?? null),
+          parecerCoach: existente.parecerCoach || imp.parecerCoach || null,
+          analiseEstrategica: existente.analiseEstrategica || imp.analiseEstrategica || '',
+          printFile: existente.printFile || imp.printFile || '',
           consolidado: deveConsolidar
         });
         abertosAtualizados++;
@@ -1602,15 +1644,20 @@ window.confirmarImportacaoCsv = function() {
         resultadoBruto: imp.resultadoBruto,
         taxas: imp.taxas,
         resultadoLiquido: imp.resultadoLiquido,
-        parecerCoach: null,
+        scoreComportamental: imp.scoreComportamental ?? null,
+        parecerCoach: imp.parecerCoach || null,
+        analiseEstrategica: imp.analiseEstrategica || '',
+        printFile: imp.printFile || '',
         consolidado: deveConsolidar
       });
       novosAdicionados++;
     }
   }
 
-  // Ordena cronologicamente e renumera pregão 1, 2, 3...
-  const ordenados = Array.from(mapaPregoes.values()).sort((a, b) => a.data.localeCompare(b.data));
+  // Ordena cronologicamente e renumera pregão 1, 2, 3..., descartando qualquer anomalia
+  const ordenados = Array.from(mapaPregoes.values())
+    .filter(p => p && p.data && /^\d{4}-\d{2}-\d{2}$/.test(p.data) && !p.data.includes('00-00'))
+    .sort((a, b) => a.data.localeCompare(b.data));
   appData.pregoes = ordenados.map((p, idx) => ({
     ...p,
     pregaoNumero: idx + 1

@@ -383,32 +383,36 @@ export function parseProfitCSV(csvText) {
     const [d] = clean.split(' ');
     if (!d) return null;
 
+    let dia = 0, mes = 0, ano = 0;
     if (d.includes('/')) {
       const parts = d.split('/');
-      const dia = parts[0].padStart(2, '0');
-      const mes = parts[1].padStart(2, '0');
-      let ano = parts[2];
-      if (!ano) {
-        ano = new Date().getFullYear().toString();
-      } else if (ano.length === 2) {
-        ano = '20' + ano;
-      }
-      return `${ano}-${mes}-${dia}`;
+      dia = parseInt(parts[0], 10);
+      mes = parseInt(parts[1], 10);
+      ano = parseInt(parts[2], 10);
+      if (!ano) ano = new Date().getFullYear();
+      else if (ano < 100) ano = 2000 + ano;
     } else if (d.includes('-')) {
       const parts = d.split('-');
       if (parts[0].length === 4) {
-        // YYYY-MM-DD
-        return d;
+        ano = parseInt(parts[0], 10);
+        mes = parseInt(parts[1], 10);
+        dia = parseInt(parts[2], 10);
       } else {
-        // DD-MM-YYYY
-        const dia = parts[0].padStart(2, '0');
-        const mes = parts[1].padStart(2, '0');
-        let ano = parts[2] || new Date().getFullYear().toString();
-        if (ano.length === 2) ano = '20' + ano;
-        return `${ano}-${mes}-${dia}`;
+        dia = parseInt(parts[0], 10);
+        mes = parseInt(parts[1], 10);
+        ano = parseInt(parts[2], 10) || new Date().getFullYear();
+        if (ano < 100) ano = 2000 + ano;
       }
+    } else {
+      return null;
     }
-    return null;
+
+    // Validação estrita de data (rejeita 00/00 ou linhas de resumo/totais)
+    if (isNaN(dia) || isNaN(mes) || isNaN(ano) || dia < 1 || dia > 31 || mes < 1 || mes > 12 || ano < 2020 || ano > 2035) {
+      return null;
+    }
+
+    return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
   }
 
   const trades = [];
