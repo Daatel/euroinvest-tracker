@@ -205,7 +205,9 @@ export function calculateMetrics(pregoes = [], customConfig = {}, diasSemOperaca
   const cumpriuMinDias = total >= cfg.MIN_PREGOES;
   const cumpriuTaxaPositivos = taxaDiasPositivos >= cfg.MIN_TAXA_POSITIVOS;
   const rompeuPiso = saldoReal <= cfg.PISO_DRAWDOWN;
-  const estourouPrazo = total >= cfg.MAX_PREGOES;
+  const ultimoPregao = pregoes[pregoes.length - 1];
+  const isHojeAberto = ultimoPregao ? (!ultimoPregao.consolidado && !isPregaoConsolidado(ultimoPregao.data)) : false;
+  const estourouPrazo = total > cfg.MAX_PREGOES || (total === cfg.MAX_PREGOES && !isHojeAberto);
 
   if (rompeuPiso) {
     status = 'REPROVADO_PISO';
@@ -233,7 +235,11 @@ export function calculateMetrics(pregoes = [], customConfig = {}, diasSemOperaca
   } else {
     status = 'EM_ANDAMENTO';
     badgeColor = 'bg-slate-800 text-slate-300 border-slate-700';
-    diagnostico = `Avaliação ativa: Pregão ${total} de ${cfg.MAX_PREGOES}. Faltam ${formatCurrency(faltaParaMeta)} e você precisa de ${positivosFaltantesAlvo10} dia(s) positivo(s) nos próximos ${diasRestantes10} pregões.`;
+    if (total === cfg.MAX_PREGOES && isHojeAberto) {
+      diagnostico = `Avaliação ativa: Pregão 10 de 10 (Sessão de hoje em andamento). Faltam ${formatCurrency(faltaParaMeta)} para bater a meta de aprovação.`;
+    } else {
+      diagnostico = `Avaliação ativa: Pregão ${total} de ${cfg.MAX_PREGOES}. Faltam ${formatCurrency(faltaParaMeta)} e você precisa de ${positivosFaltantesAlvo10} dia(s) positivo(s) nos próximos ${diasRestantes10} pregões.`;
+    }
   }
 
   // Estatísticas operacionais adicionais
@@ -320,40 +326,29 @@ export function parseProfitCSV(csvText) {
   const rawHeader = firstLine.split(delimiter).map(h => h.replace(/["']/g, '').trim());
   const normHeader = rawHeader.map(norm);
 
-  // Busca inteligente de colunas por múltiplos sinônimos
-  const pnlIndex = normHeader.findIndex(h => 
-    h === 'p&l total' || h === 'p&l operacao' || h === 'p&l intervalo' || h.includes('p&l') || 
-    h.includes('resultado liquido') || h.includes('liquido') || h.includes('lucro') || h.includes('profit')
-  );
+  function findBestIndex(candidates) {
+    for (const pattern of candidates) {
+      const idx = normHeader.findIndex(h => typeof pattern === 'string' ? h.includes(pattern) : pattern.test(h));
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+
+  // Busca inteligente de colunas com prioridade correta
+  const pnlIndex = findBestIndex([
+    'p&l total', 'pnl total', 'resultado liquido', 'liquido',
+    'p&l operacao', 'pnl operacao', 'p&l', 'pnl', 'resultado'
+  ]);
   
-  const aberturaIndex = normHeader.findIndex(h => 
-    h.includes('abertura') || h === 'data' || h.includes('data/hora') || h.includes('inicio') || 
-    h.includes('horario') || h.includes('open') || h.includes('date')
-  );
-
-  const statusIndex = normHeader.findIndex(h => 
-    h.includes('status') || h === 'tipo' || h.includes('resultado') || h.includes('win')
-  );
-
-  const qtdIndex = normHeader.findIndex(h => 
-    h.includes('qtd c') || h.includes('qtd v') || h.includes('qtd compra') || h.includes('qtd venda') || 
-    h.includes('qtd') || h.includes('quantidade') || h.includes('contratos') || h.includes('lote') || 
-    h.includes('volume') || h.includes('qty') || h.includes('size')
-  );
-
-  const precoCIndex = normHeader.findIndex(h => 
-    h.includes('preco c') || h.includes('preco compra') || h.includes('preco de compra') || 
-    h.includes('preco entrada') || h.includes('entrada') || h.includes('buy')
-  );
-
-  const precoVIndex = normHeader.findIndex(h => 
-    h.includes('preco v') || h.includes('preco venda') || h.includes('preco de venda') || 
-    h.includes('preco saida') || h.includes('saida') || h.includes('sell')
-  );
-
-  const pontosIndex = normHeader.findIndex(h => 
-    h.includes('pontos') || h === 'pts' || h.includes('variacao (pts)') || h.includes('points')
-  );
+  const aberturaIndex = findBestIndex(['abertura', 'data/hora', 'data', 'inicio', 'horario', 'open', 'date']);
+  const fechamentoIndex = findBestIndex(['fechamento', 'fim', 'close']);
+  const statusIndex = findBestIndex(['status', 'tipo', 'resultado', 'win']);
+  const qtdCIndex = findBestIndex(['qtd compra', 'qtd c']);
+  const qtdVIndex = findBestIndex(['qtd venda', 'qtd v']);
+  const qtdIndex = qtdCIndex !== -1 ? qtdCIndex : findBestIndex(['qtd', 'quantidade', 'contratos', 'lote', 'volume', 'qty', 'size']);
+  const precoCIndex = findBestIndex(['preco de compra', 'preco compra', 'preco c', 'preco entrada', 'entrada', 'buy']);
+  const precoVIndex = findBestIndex(['preco de venda', 'preco venda', 'preco v', 'preco saida', 'saida', 'sell']);
+  const pontosIndex = findBestIndex(['pontos', 'pts', 'variacao (pts)', 'points']);
 
   if (aberturaIndex === -1 || pnlIndex === -1) return null;
 
@@ -423,7 +418,13 @@ export function parseProfitCSV(csvText) {
     if (!dateIso) continue;
 
     let status = statusIndex !== -1 ? (cols[statusIndex]?.replace(/["']/g, '') || '') : '';
-    const qtd = qtdIndex !== -1 ? (parseInt(cols[qtdIndex]?.replace(/["']/g, ''), 10) || 2) : 2;
+    let qtd = 2;
+    if (qtdCIndex !== -1 && qtdVIndex !== -1) {
+      qtd = Math.max(parseInt(cols[qtdCIndex]?.replace(/["']/g, ''), 10) || 0, parseInt(cols[qtdVIndex]?.replace(/["']/g, ''), 10) || 0) || 2;
+    } else if (qtdIndex !== -1) {
+      qtd = parseInt(cols[qtdIndex]?.replace(/["']/g, ''), 10) || 2;
+    }
+
     const pnlRaw = cols[pnlIndex] || '0';
     let liquido = 0;
     let pontos = 0;
@@ -436,7 +437,10 @@ export function parseProfitCSV(csvText) {
       } else {
         // Exemplo Clássico: "98,53 | 250.0"
         liquido = parseCurrencyVal(parts[0]);
-        pontos = parseFloat(parts[1].replace(/["']/g, '').trim()) || 0;
+        const ptCand = parseFloat(parts[1].replace(/["']/g, '').trim()) || 0;
+        if (Math.abs(ptCand) >= 5) {
+          pontos = ptCand;
+        }
       }
     } else {
       liquido = parseCurrencyVal(pnlRaw);
@@ -464,7 +468,17 @@ export function parseProfitCSV(csvText) {
     const bruto = Math.round(pontos * valorPontoWin * qtd * 100) / 100;
     const taxas = Math.round(Math.max(0, bruto - liquido) * 100) / 100;
 
-    trades.push({ dateIso, status, qtd, pontos, bruto, taxas, liquido });
+    let horaAbertura = '';
+    const mHora = cols[aberturaIndex]?.match(/(\d{2}:\d{2})/);
+    if (mHora) horaAbertura = mHora[1];
+
+    let horaFechamento = '';
+    if (fechamentoIndex !== -1 && cols[fechamentoIndex]) {
+      const mFim = cols[fechamentoIndex]?.match(/(\d{2}:\d{2})/);
+      if (mFim) horaFechamento = mFim[1];
+    }
+
+    trades.push({ dateIso, status, qtd, pontos, bruto, taxas, liquido, horaAbertura, horaFechamento });
   }
 
   if (trades.length === 0) return { pregoes: [], diasSemOperacao: [], totalTrades: 0 };
@@ -481,7 +495,9 @@ export function parseProfitCSV(csvText) {
         resultadoLiquido: 0,
         tradesVencedores: 0,
         tradesPerdedores: 0,
-        maxContratos: 0
+        maxContratos: 0,
+        minTime: t.horaAbertura || '09:00',
+        maxTime: t.horaFechamento || t.horaAbertura || '18:00'
       };
     }
     const d = diasMap[t.dateIso];
@@ -492,6 +508,9 @@ export function parseProfitCSV(csvText) {
     if (t.status.toLowerCase().includes('venc')) d.tradesVencedores++;
     else if (t.status.toLowerCase().includes('perd')) d.tradesPerdedores++;
     d.maxContratos = Math.max(d.maxContratos, t.qtd);
+    if (t.horaAbertura && t.horaAbertura < d.minTime) d.minTime = t.horaAbertura;
+    const end = t.horaFechamento || t.horaAbertura;
+    if (end && end > d.maxTime) d.maxTime = end;
   }
 
   const sortedDates = Object.keys(diasMap).sort();
@@ -521,8 +540,12 @@ export function parseProfitCSV(csvText) {
       resultadoBruto: Math.round(d.resultadoBruto * 100) / 100,
       taxas: Math.round(d.taxas * 100) / 100,
       resultadoLiquido: Math.round(d.resultadoLiquido * 100) / 100,
+      saldoApuradoDia: Math.round(d.resultadoLiquido * 100) / 100,
       tradesVencedores: d.tradesVencedores,
-      tradesPerdedores: d.tradesPerdedores
+      tradesPerdedores: d.tradesPerdedores,
+      tradesTotal: d.tradesVencedores + d.tradesPerdedores,
+      horarioInicio: d.minTime,
+      horarioFim: d.maxTime
     };
   });
 

@@ -49,6 +49,37 @@ const CALENDARIO_OFICIAL = {
     eventos: [
       { hora: "Todo o dia", pais: "BR", flag: "🇧🇷", moeda: "BRL", nome: "Feriado Nacional — Dia da Consciência Negra (B3 Fechada)", projecao: "-", anterior: "-" }
     ]
+  },
+  "2026-11-23": {
+    dataStr: "23/11",
+    diaSemana: "Segunda-feira, 23 de Novembro",
+    eventos: [
+      { hora: "11:45", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "PMI Industrial e de Serviços S&P Global (Nov)", projecao: "51,2", anterior: "50,5" }
+    ]
+  },
+  "2026-11-24": {
+    dataStr: "24/11",
+    diaSemana: "Terça-feira, 24 de Novembro",
+    eventos: [
+      { hora: "09:00", pais: "BR", flag: "🇧🇷", moeda: "BRL", nome: "IPCA-15 (Novembro)", projecao: "0,35%", anterior: "0,54%" },
+      { hora: "12:00", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Confiança do Consumidor CB (Nov)", projecao: "110,5", anterior: "108,7" }
+    ]
+  },
+  "2026-11-25": {
+    dataStr: "25/11",
+    diaSemana: "Quarta-feira, 25 de Novembro",
+    eventos: [
+      { hora: "10:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "PIB Trimestral dos EUA (Q3)", projecao: "2,8%", anterior: "3,0%" },
+      { hora: "10:30", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Pedidos de Bens Duráveis (Out)", projecao: "0,5%", anterior: "-0,8%" }
+    ]
+  },
+  "2026-11-26": {
+    dataStr: "26/11",
+    diaSemana: "Quinta-feira, 26 de Novembro",
+    eventos: [
+      { hora: "Todo o dia", pais: "US", flag: "🇺🇸", moeda: "USD", nome: "Feriado de Ação de Graças (Thanksgiving EUA - Bolsas Fechadas)", projecao: "-", anterior: "-" },
+      { hora: "09:00", pais: "BR", flag: "🇧🇷", moeda: "BRL", nome: "Pregão B3 / WIN Aberto (Volume Institucional Reduzido)", projecao: "-", anterior: "-" }
+    ]
   }
 };
 
@@ -178,7 +209,7 @@ const AUDITED_INITIAL_PREGOES = [
   {
     id: "pregao-2026-11-12",
     data: "2026-11-12",
-    contratos: 2,
+    contratos: 4,
     tradesVencedores: 1,
     tradesPerdedores: 4,
     tradesTotal: 5,
@@ -216,9 +247,9 @@ const AUDITED_INITIAL_PREGOES = [
     tradesVencedores: 5,
     tradesPerdedores: 1,
     tradesTotal: 6,
-    pontos: 822.5,
-    resultadoBruto: 329.00,
-    taxas: 8.82,
+    pontos: 823.0,
+    resultadoBruto: 329.20,
+    taxas: 9.02,
     resultadoLiquido: 320.18,
     saldoApuradoDia: 320.18,
     horarioInicio: "09:05",
@@ -249,13 +280,13 @@ const AUDITED_INITIAL_PREGOES = [
     tradesVencedores: 1,
     tradesPerdedores: 2,
     tradesTotal: 3,
-    pontos: -407.5,
-    resultadoBruto: -163.00,
-    taxas: 4.41,
+    pontos: -408.0,
+    resultadoBruto: -163.20,
+    taxas: 4.21,
     resultadoLiquido: -167.41,
     saldoApuradoDia: -167.41,
-    horarioInicio: "09:15",
-    horarioFim: "11:30",
+    horarioInicio: "11:29",
+    horarioFim: "13:37",
     setup: "VWAP e Volume Profile",
     assimetriaLote: false,
     consolidado: true,
@@ -266,17 +297,17 @@ const AUDITED_INITIAL_PREGOES = [
   {
     id: "pregao-2026-11-17",
     data: "2026-11-17",
-    contratos: 10,
+    contratos: 12,
     tradesVencedores: 7,
-    tradesPerdedores: 3,
-    tradesTotal: 10,
-    pontos: 8.3,
-    resultadoBruto: 8.16,
-    taxas: 106.46,
+    tradesPerdedores: 2,
+    tradesTotal: 9,
+    pontos: 611.0,
+    resultadoBruto: 280.40,
+    taxas: 29.07,
     resultadoLiquido: 251.33,
     saldoApuradoDia: 251.33,
-    horarioInicio: "09:05",
-    horarioFim: "11:30",
+    horarioInicio: "09:28",
+    horarioFim: "16:19",
     setup: "VWAP e Volume Profile",
     assimetriaLote: false,
     consolidado: true,
@@ -287,13 +318,13 @@ const AUDITED_INITIAL_PREGOES = [
   {
     id: "pregao-2026-11-18",
     data: "2026-11-18",
-    contratos: 6,
-    tradesVencedores: 11,
+    contratos: 8,
+    tradesVencedores: 10,
     tradesPerdedores: 4,
-    tradesTotal: 15,
-    pontos: 945.0,
-    resultadoBruto: 325.40,
-    taxas: 32.49,
+    tradesTotal: 14,
+    pontos: 787.0,
+    resultadoBruto: 325.80,
+    taxas: 32.89,
     resultadoLiquido: 292.91,
     saldoApuradoDia: 292.91,
     horarioInicio: "09:06",
@@ -302,28 +333,112 @@ const AUDITED_INITIAL_PREGOES = [
     assimetriaLote: false,
     consolidado: true,
     scoreComportamental: null,
-    analiseEstrategica: "Excelente sessão matinal da Rocket Trader: 11 vitórias em 15 trades (+73,3% de acerto), saldo líquido de +R$ 292,91 e +945 pontos conquistados.",
+    analiseEstrategica: "Excelente sessão matinal da Rocket Trader: 10 vitórias em 14 trades, saldo líquido de +R$ 292,91 e +787 pontos conquistados.",
     parecerCoach: null
   },
   {
     id: "pregao-2026-11-19",
     data: "2026-11-19",
-    contratos: 10,
+    contratos: 12,
     tradesVencedores: 6,
-    tradesPerdedores: 3,
-    tradesTotal: 9,
-    pontos: 10.2,
-    resultadoBruto: 4.18,
-    taxas: 49.86,
+    tradesPerdedores: 1,
+    tradesTotal: 7,
+    pontos: 365.0,
+    resultadoBruto: 324.00,
+    taxas: 25.46,
     resultadoLiquido: 298.54,
     saldoApuradoDia: 298.54,
-    horarioInicio: "09:15",
-    horarioFim: "11:30",
+    horarioInicio: "09:50",
+    horarioFim: "11:29",
+    setup: "VWAP e Volume Profile",
+    assimetriaLote: false,
+    consolidado: true,
+    scoreComportamental: 9.5,
+    analiseEstrategica: "Sessão consistente respeitando o plano de trade oficial na janela matinal.",
+    parecerCoach: null
+  },
+  {
+    id: "pregao-2026-11-23",
+    data: "2026-11-23",
+    contratos: 10,
+    tradesVencedores: 3,
+    tradesPerdedores: 3,
+    tradesTotal: 6,
+    pontos: 327.0,
+    resultadoBruto: 308.60,
+    taxas: 17.51,
+    resultadoLiquido: 291.09,
+    saldoApuradoDia: 291.09,
+    horarioInicio: "09:13",
+    horarioFim: "10:25",
+    setup: "VWAP e Volume Profile",
+    assimetriaLote: false,
+    consolidado: true,
+    scoreComportamental: null,
+    analiseEstrategica: "Sessão matinal fechada com ganho sólido de +R$ 291,09 e 327 pontos.",
+    parecerCoach: null
+  },
+  {
+    id: "pregao-2026-11-24",
+    data: "2026-11-24",
+    contratos: 10,
+    tradesVencedores: 1,
+    tradesPerdedores: 1,
+    tradesTotal: 2,
+    pontos: -138.0,
+    resultadoBruto: -507.00,
+    taxas: 9.55,
+    resultadoLiquido: -516.55,
+    saldoApuradoDia: -516.55,
+    horarioInicio: "09:37",
+    horarioFim: "10:47",
+    setup: "VWAP e Volume Profile",
+    assimetriaLote: false,
+    consolidado: true,
+    scoreComportamental: null,
+    analiseEstrategica: "Sessão com perda de -R$ 516,55, com parada e controle de risco.",
+    parecerCoach: null
+  },
+  {
+    id: "pregao-2026-11-25",
+    data: "2026-11-25",
+    contratos: 10,
+    tradesVencedores: 11,
+    tradesPerdedores: 12,
+    tradesTotal: 23,
+    pontos: 852.0,
+    resultadoBruto: 272.40,
+    taxas: 57.94,
+    resultadoLiquido: 214.46,
+    saldoApuradoDia: 214.46,
+    horarioInicio: "10:17",
+    horarioFim: "16:28",
+    setup: "VWAP e Volume Profile",
+    assimetriaLote: false,
+    consolidado: true,
+    scoreComportamental: null,
+    analiseEstrategica: "Sessão de alta atividade com 23 operações, fechamento positivo em +R$ 214,46 e +852 pontos.",
+    parecerCoach: null
+  },
+  {
+    id: "pregao-2026-11-26",
+    data: "2026-11-26",
+    contratos: 4,
+    tradesVencedores: 3,
+    tradesPerdedores: 4,
+    tradesTotal: 7,
+    pontos: 403.0,
+    resultadoBruto: 320.40,
+    taxas: 16.57,
+    resultadoLiquido: 303.83,
+    saldoApuradoDia: 303.83,
+    horarioInicio: "10:22",
+    horarioFim: "11:42",
     setup: "VWAP e Volume Profile",
     assimetriaLote: false,
     consolidado: false,
-    scoreComportamental: 9.5,
-    analiseEstrategica: "Sessão em andamento com alta assertividade (6W / 3L), respeitando o plano de trade oficial.",
+    scoreComportamental: null,
+    analiseEstrategica: "Sessão de hoje (26/11): +R$ 303,83 e +403 pontos, consolidando o saldo acumulado em R$ 1.226,29.",
     parecerCoach: null
   }
 ];
@@ -361,19 +476,18 @@ function loadData() {
           return /^\d{4}-\d{2}-\d{2}$/.test(p.data);
         });
 
-        // Reconcilia os pregões auditados oficiais: restaura scores e pareceres se perdidos
+        // Reconcilia os pregões auditados oficiais: sincroniza dados numéricos do extrato oficial preservando scores, pareceres e prints
         for (const aud of AUDITED_INITIAL_PREGOES) {
           const idx = appData.pregoes.findIndex(p => p.data === aud.data);
           if (idx !== -1) {
-            // Se o pregão existe no storage mas perdeu o score canônico, restaura
-            if (aud.scoreComportamental !== null && aud.scoreComportamental !== undefined) {
-              if (appData.pregoes[idx].scoreComportamental === null || appData.pregoes[idx].scoreComportamental === undefined) {
-                appData.pregoes[idx].scoreComportamental = aud.scoreComportamental;
-              }
-            }
-            if (aud.parecerCoach && !appData.pregoes[idx].parecerCoach) {
-              appData.pregoes[idx].parecerCoach = aud.parecerCoach;
-            }
+            const existing = appData.pregoes[idx];
+            appData.pregoes[idx] = {
+              ...aud,
+              scoreComportamental: (existing.scoreComportamental !== null && existing.scoreComportamental !== undefined) ? existing.scoreComportamental : aud.scoreComportamental,
+              parecerCoach: existing.parecerCoach || aud.parecerCoach,
+              analiseEstrategica: existing.analiseEstrategica || aud.analiseEstrategica,
+              printFile: existing.printFile || aud.printFile
+            };
           } else {
             appData.pregoes.push(JSON.parse(JSON.stringify(aud)));
           }

@@ -13,6 +13,22 @@ Todo dia o mercado se comporta da mesma maneira, abre, aumenta a volatilidade at
 
 
 
+## v2.5 — 2026-11-26 (Sessão: Sincronização Integral dos 10 Pregões via Extrato Oficial & Correção de Prioridade de P&L)
+
+### 🛡️ Sincronização Canônica dos 10 Pregões (`web/app.js`, `dados_avaliacao.json`, `web/calculations.js`, `web/index.html`)
+- **Integração Completa dos 10 Pregões da Avaliação:** Atualização a partir do extrato oficial `operações-intradia (10).csv`, integrando as sessões dos dias 23/11 (+R$ 291,09), 24/11 (-R$ 516,55), 25/11 (+R$ 214,46) e hoje 26/11 (+R$ 303,83).
+- **Consolidação dos Resultados:**
+  - Saldo Real Acumulado: **+R$ 1.226,29** (faltando apenas R$ 173,71 para a meta de R$ 1.400,00).
+  - Taxa de Dias Positivos: **70,0%** (7 dias positivos em 10 pregões, superando com folga a exigência mínima de 60%).
+  - Margem Livre até o Piso: **R$ 4.061,29** (Piso intacto).
+- **Correção Crítica no Parser CSV (`parseProfitCSV`):**
+  - Implementada prioridade estrita de busca de colunas financeiras (`P&L Total` prioritário sobre `P&L Intervalo`), evitando que percentuais decimais de intervalo fossem erroneamente interpretados como pontuação do mini índice.
+  - Variação real de pontos e horários de abertura e fechamento mapeados com fidelidade milimétrica em todas as operações.
+- **Tratamento Dinâmico do Pregão 10:** Caso o 10º pregão seja o dia de hoje em aberto (antes das 18h), o sistema mantém o status `EM_ANDAMENTO` com diagnóstico de reta final em vez de declarar prazo esgotado prematuramente.
+- **Expansão do Radar Macroeconômico:** Adicionados os eventos e feriados da semana de 23 a 26 de novembro (incluindo feriado de Thanksgiving nos EUA e dinâmica do WIN).
+
+---
+
 ## v2.4 — 2026-11-19 (Sessão: Blindagem Definitiva do Histórico e Deep Merge Imutável no CSV)
 
 ### 🛡️ Integridade Canônica & Purga de Registros Fantasmas (`web/calculations.js`, `web/index.html`, `web/app.js`)
